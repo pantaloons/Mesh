@@ -21,10 +21,6 @@ typedef struct _hashmap {
 	struct _mapnode **map;
 } HashMap;
 
-HashMap* initMap(int capacity);
-int edgeEqual(EdgeID id1, EdgeID id2);
-void mapPut(HashMap *map, EdgeID key, Edge *value);
-Edge* mapGet(HashMap* map, EdgeID key);
 Mesh* readMesh(char* fileName);
 
 #endif

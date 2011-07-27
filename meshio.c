@@ -13,6 +13,20 @@ HashMap* initMap(int capacity) {
 	return map;
 }
 
+void destroyChain(MapNode* node) {
+	while(node != NULL) {
+		MapNode *next = node->next;
+		free(node);
+		node = next;
+	}
+}
+
+void destroyMap(HashMap* map) {
+	for(int i = 0; i < map->modulus; i++) destroyChain(map->map[i]);
+	free(map->map);
+	free(map);
+}
+
 int edgeEqual(EdgeID id1, EdgeID id2) {
 	int min1 = MIN(id1.v1, id1.v2);
 	int min2 = MIN(id2.v1, id2.v2);
@@ -40,7 +54,7 @@ void mapPut(HashMap *map, EdgeID key, Edge *value) {
 }
 
 Edge* mapGet(HashMap* map, EdgeID key) {
-	int hash = (key.v1 * 5003 + key.v2) % map->modulus;
+	int hash = (key.v1 * (unsigned long long int)5003 + key.v2) % map->modulus;
 	MapNode *node = map->map[hash];
 	while(node != NULL) {
 		if(edgeEqual(node->key, key)) return node->value;
@@ -76,6 +90,7 @@ Mesh* readMesh(char* fileName) {
 	Edge** edges = malloc(3 * numFaces * sizeof(Edge*));
 	HashMap* edgeMap = initMap(MAP_CAPACITY);
 	int visited[numVertices];
+	for(int i = 0; i < numVertices; i++) visited[i] = 0;
 	for(int i = 0; i < numFaces; i++) {
 		if(i % 50000 == 0) printf("Loading face %d\n", i);
 		int vCount, v1, v2, v3;
@@ -142,6 +157,8 @@ Mesh* readMesh(char* fileName) {
 		edge3->pair = mapGet(edgeMap, ei3);
 		mapPut(edgeMap, ei3, edge3);
 	}
+	destroyMap(edgeMap);
+	fclose(f);
 	
 	Mesh *m = initMesh(numVertices, numFaces, 3 * numFaces, verts, faces, edges);
 	return m;
