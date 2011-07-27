@@ -1,6 +1,15 @@
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 #include <GL/gl.h>
 #include <GL/glu.h>
+
+#ifdef _WIN32
+#include "lib/glut.h"
+#else
 #include <GL/glut.h>
+#endif
 
 #include "meshio.h"
 
@@ -47,11 +56,12 @@ void reshape(GLint newWidth, GLint newHeight) {
 	glutPostRedisplay();
 }
 
-void render() {
+void render(void) {
+	int i;
 	glPushMatrix();
 	glScalef(90, 90, 90);
 	glBegin(GL_TRIANGLES);
-	for(int i = 0; i < mesh->numFaces; i++) {
+	for(i = 0; i < mesh->numFaces; i++) {
 		Edge* edge = mesh->faces[i]->edge;
 		do {
 			Vertex* vert = edge->vert;
@@ -64,7 +74,7 @@ void render() {
 	glEnd();
 }
 
-void draw() {
+void draw(void) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
 	render();
@@ -72,7 +82,7 @@ void draw() {
 	glutSwapBuffers();
 }
 
-void deallocate() {
+void deallocate(void) {
 	destroyMesh(mesh);
 }
 

@@ -12,9 +12,10 @@ Mesh* initMesh(int numVertices, int numFaces, int numEdges, Vertex** verts, Face
 }
 
 void destroyMesh(Mesh* m) {
-	for(int i = 0; i < m->numEdges; i++) free(m->edges[i]);
-	for(int i = 0; i < m->numVertices; i++) free(m->verts[i]);
-	for(int i = 0; i < m->numFaces; i++) free(m->faces[i]);
+	int i;
+	for(i = 0; i < m->numEdges; i++) free(m->edges[i]);
+	for(i = 0; i < m->numVertices; i++) free(m->verts[i]);
+	for(i = 0; i < m->numFaces; i++) free(m->faces[i]);
 	free(m->edges);
 	free(m->verts);
 	free(m->faces);

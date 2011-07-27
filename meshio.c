@@ -6,10 +6,11 @@
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
 HashMap* initMap(int capacity) {
+	int i;
 	HashMap* map = malloc(sizeof(HashMap));
 	map->modulus = capacity;
 	map->map = malloc(capacity * sizeof(MapNode*));
-	for(int i = 0; i < capacity; i++) map->map[i] = NULL;
+	for(i = 0; i < capacity; i++) map->map[i] = NULL;
 	return map;
 }
 
@@ -22,7 +23,8 @@ void destroyChain(MapNode* node) {
 }
 
 void destroyMap(HashMap* map) {
-	for(int i = 0; i < map->modulus; i++) destroyChain(map->map[i]);
+	int i;
+	for(i = 0; i < map->modulus; i++) destroyChain(map->map[i]);
 	free(map->map);
 	free(map);
 }
@@ -38,6 +40,7 @@ int edgeEqual(EdgeID id1, EdgeID id2) {
 void mapPut(HashMap *map, EdgeID key, Edge *value) {
 	int hash = (key.v1 * 997 + key.v2) % map->modulus;
 	MapNode *node = map->map[hash];
+	MapNode *newNode;
 	while(node != NULL) {
 		if(edgeEqual(node->key, key)) {
 			node->value = value;
@@ -45,7 +48,7 @@ void mapPut(HashMap *map, EdgeID key, Edge *value) {
 		}
 		node = node->next;
 	}
-	MapNode* newNode = malloc(sizeof(MapNode));
+	newNode = malloc(sizeof(MapNode));
 	newNode->next = map->map[hash];
 	newNode->key.v1 = key.v1;
 	newNode->key.v2 = key.v2;
@@ -65,35 +68,45 @@ Edge* mapGet(HashMap* map, EdgeID key) {
 
 Mesh* readMesh(char* fileName) {
 	FILE *f = fopen(fileName, "r");
+	char header[3];
+	int numVertices, numFaces, numEdges;
+	Vertex **verts;
+	Face **faces;
+	Edge **edges;
+	HashMap* edgeMap = initMap(MAP_CAPACITY);
+	int *visited;
+	int vCount, v1, v2, v3;
+	EdgeID ei1, ei2, ei3;
+	Edge *edge1, *edge2, *edge3;
+	Mesh *m;
+	int i;
+	
 	if(f == NULL) {
 		printf("Could not open file %s for reading, does it exist?\n", fileName);
 		exit(1);
 	}
-	char header[3];
 	fscanf(f, "%s", header);
 	if(strncmp(header, "OFF", 3)) {
 		printf("Model file %s is not in object file format (OFF).\n", fileName);
 		exit(2);
 	}
 	
-	int numVertices, numFaces, numEdges;
 	fscanf(f, "%d %d %d", &numVertices, &numFaces, &numEdges);
 	
-	Vertex** verts = malloc(numVertices * sizeof(Vertex*));
-	for(int i = 0; i < numVertices; i++) {
+	verts = malloc(numVertices * sizeof(Vertex*));
+	faces = malloc(numFaces * sizeof(Face*));
+	edges = malloc(3 * numFaces * sizeof(Edge*));
+	
+	for(i = 0; i < numVertices; i++) {
 		if(i % 50000 == 0) printf("Loading vert %d\n", i);
 		verts[i] = malloc(sizeof(Vertex));
 		fscanf(f, "%f %f %f", &(verts[i]->x), &(verts[i]->y), &(verts[i]->z));
 	}
 	
-	Face** faces = malloc(numFaces * sizeof(Face*));
-	Edge** edges = malloc(3 * numFaces * sizeof(Edge*));
-	HashMap* edgeMap = initMap(MAP_CAPACITY);
-	int visited[numVertices];
-	for(int i = 0; i < numVertices; i++) visited[i] = 0;
-	for(int i = 0; i < numFaces; i++) {
+	visited = malloc(numVertices * sizeof(int));
+	for(i = 0; i < numVertices; i++) visited[i] = 0;
+	for(i = 0; i < numFaces; i++) {
 		if(i % 50000 == 0) printf("Loading face %d\n", i);
-		int vCount, v1, v2, v3;
 		fscanf(f, "%d", &vCount);
 		if(vCount != 3) {
 			printf("Non-triangle meshes are not supported.");
@@ -109,13 +122,18 @@ Mesh* readMesh(char* fileName) {
 			exit(5);
 		}
 		
-		EdgeID ei1 = {v1, v2}, ei2 = {v2, v3}, ei3 = {v3, v1};
+		ei1.v1 = v1;
+		ei1.v2 = v2;
+		ei2.v1 = v2;
+		ei2.v2 = v3;
+		ei3.v1 = v3;
+		ei3.v2 = v1;
 		
 		faces[i] = malloc(sizeof(Face));
 		
-		Edge *edge1 = malloc(sizeof(Edge));
-		Edge *edge2 = malloc(sizeof(Edge));
-		Edge *edge3 = malloc(sizeof(Edge));
+		edge1 = malloc(sizeof(Edge));
+		edge2 = malloc(sizeof(Edge));
+		edge3 = malloc(sizeof(Edge));
 		edges[3 * i] = edge1;
 		edges[3 * i + 1] = edge2;
 		edges[3 * i + 2] = edge3;
@@ -159,7 +177,8 @@ Mesh* readMesh(char* fileName) {
 	}
 	destroyMap(edgeMap);
 	fclose(f);
+	free(visited);
 	
-	Mesh *m = initMesh(numVertices, numFaces, 3 * numFaces, verts, faces, edges);
+	m = initMesh(numVertices, numFaces, 3 * numFaces, verts, faces, edges);
 	return m;
 }
