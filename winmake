@@ -1,0 +1,20 @@
+CC = cl
+
+all: raptor.exe
+
+raptor.exe: raptor.obj mesh.obj meshio.obj
+	$(CC) /Feraptor.exe raptor.obj mesh.obj meshio.obj /link /LIBPATH:lib glut32.lib
+	
+raptor.obj: raptor.c
+	$(CC) /c raptor.c
+	
+meshio.obj: meshio.c
+	$(CC) /c meshio.c
+
+mesh.obj: mesh.c
+	$(CC) /c mesh.c
+	
+clean:
+	del raptor.exe raptor.obj meshio.obj mesh.obj
+	
+.PHONY: clean
