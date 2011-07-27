@@ -1,6 +1,6 @@
 CC = cl
 
-all: clean raptor.exe
+all: raptor.exe
 
 raptor.exe: raptor.obj mesh.obj meshio.obj
 	$(CC) /nologo /Feraptor.exe raptor.obj mesh.obj meshio.obj /link /LIBPATH:lib glut32.lib

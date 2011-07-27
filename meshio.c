@@ -1,9 +1,11 @@
 #include "meshio.h"
 
 #define MAP_CAPACITY 100000000
+#define PROGRESS_RATE 0.1
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
+#define ABS(a) ((a) < 0 ? (-(a)) : (a))
 
 HashMap* initMap(int capacity) {
 	int i;
@@ -80,6 +82,7 @@ Mesh* readMesh(char* fileName) {
 	Edge *edge1, *edge2, *edge3;
 	Mesh *m;
 	int i;
+	double progress = -1.0f, curProgress = 0.0f;
 	
 	if(f == NULL) {
 		printf("Could not open file %s for reading, does it exist?\n", fileName);
@@ -97,16 +100,28 @@ Mesh* readMesh(char* fileName) {
 	faces = malloc(numFaces * sizeof(Face*));
 	edges = malloc(3 * numFaces * sizeof(Edge*));
 	
+	printf("Loading %d verticies...\n", numVertices);
 	for(i = 0; i < numVertices; i++) {
-		if(i % 50000 == 0) printf("Loading vert %d\n", i);
+		curProgress = i/(float)numVertices;
+		if(curProgress - progress >= PROGRESS_RATE) {
+			progress = curProgress;
+			printf("%d%% complete.\n", (int)(progress * 100));
+		}
 		verts[i] = malloc(sizeof(Vertex));
 		fscanf(f, "%f %f %f", &(verts[i]->x), &(verts[i]->y), &(verts[i]->z));
 	}
+	printf("100%% complete.\n");
 	
+	progress = -1.0f;
 	visited = malloc(numVertices * sizeof(int));
 	for(i = 0; i < numVertices; i++) visited[i] = 0;
+	printf("Loading %d faces...\n", numFaces);
 	for(i = 0; i < numFaces; i++) {
-		if(i % 50000 == 0) printf("Loading face %d\n", i);
+		curProgress = i/(float)numFaces;
+		if(curProgress - progress >= PROGRESS_RATE) {
+			progress = curProgress;
+			printf("%d%% complete.\n", (int)(progress * 100));
+		}
 		fscanf(f, "%d", &vCount);
 		if(vCount != 3) {
 			printf("Non-triangle meshes are not supported.");
@@ -175,6 +190,8 @@ Mesh* readMesh(char* fileName) {
 		edge3->pair = mapGet(edgeMap, ei3);
 		mapPut(edgeMap, ei3, edge3);
 	}
+	printf("100%% complete.\n");
+	
 	destroyMap(edgeMap);
 	fclose(f);
 	free(visited);
