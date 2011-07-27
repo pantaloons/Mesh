@@ -1,0 +1,1 @@
+nmake /NOLOGO /F winmake
