@@ -19,7 +19,7 @@
 #define WINDOW_START_HEIGHT 480
 #define SCENE_SPEED 1.0f
 #define CLOCK_RATE 1000
-#define MODEL_FILE "objects/raptor.off"
+#define MODEL_FILE "objects/cube.off"
 
 int width = WINDOW_START_WIDTH;
 int height = WINDOW_START_HEIGHT;
@@ -27,6 +27,7 @@ int height = WINDOW_START_HEIGHT;
 unsigned long lastTick;
 
 Mesh* mesh;
+
 GLfloat lightMat[] = {1.0, 0.0, 0.0, 1.0}; 
 GLfloat lightPos[] = {1.0, 1.0, 1.0, 0.0};  /* Infinite light location. */
 
@@ -67,7 +68,8 @@ void render(void) {
 	int i;
 	glPushMatrix();
 	glRotatef(yrot, 0.0f, 1.0f, 0.0f);  
-	glScalef(80, 80, 80);
+	//glScalef(80, 80, 80);
+	glScalef(10, 10, 10);
 	glBegin(GL_TRIANGLES);
 	for(i = 0; i < mesh->numFaces; i++) {
 		Edge* edge = mesh->faces[i]->edge;
@@ -119,7 +121,18 @@ void deallocate(void) {
 	destroyMesh(mesh);
 }
 
-void input(int k, int x, int y) {
+void keyboardInput(unsigned char key, int x, int y) {
+	switch(key) {
+		case '1':
+			printf("Deleting edge: (%d, %d)\n", mesh->edges[0]->vert->index, mesh->edges[0]->pair->vert->index);
+			collapseEdge(mesh, mesh->edges[0]);
+			break;
+		default: break;
+	}
+	glutPostRedisplay();
+}
+
+void specialInput(int k, int x, int y) {
 	switch(k) {
 		case GLUT_KEY_LEFT:
 			yrot = (yrot + 5) % 360;
@@ -146,7 +159,8 @@ int main(int argc, char** argv) {
 	glutReshapeFunc(reshape);
 	glutDisplayFunc(tick);
 	glutIdleFunc(tick);
-	glutSpecialFunc(input);
+	glutSpecialFunc(specialInput);
+	glutKeyboardFunc(keyboardInput);
 	
 	glutMainLoop();
 	
