@@ -1,0 +1,1 @@
+START /WAIT /B nmake /NOLOGO /F winmake clean
