@@ -169,10 +169,6 @@ Mesh* readMesh(char* fileName) {
 		edges[3 * i + 1] = edge2;
 		edges[3 * i + 2] = edge3;
 		
-		edge1->iindex = 3 * i;
-		edge2->iindex = 3 * i + 1;
-		edge3->iindex = 3 * i + 2;
-		
 		edge1->index = 3 * i;
 		edge1->vert = verts[v2];
 		edge1->face = faces[i];
