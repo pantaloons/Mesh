@@ -21,7 +21,7 @@
 #define WINDOW_START_HEIGHT 480
 #define SCENE_SPEED 1.0f
 #define CLOCK_RATE 1000
-#define MODEL_FILE "objects/cube.off"
+#define MODEL_FILE "objects/eight.off"
 
 int width = WINDOW_START_WIDTH;
 int height = WINDOW_START_HEIGHT;
@@ -77,8 +77,8 @@ void render(void) {
 	int i;
 	glPushMatrix();
 	glRotatef(yrot, 0.0f, 1.0f, 0.0f);  
-	//glScalef(80, 80, 80);
-	glScalef(10, 10, 10);
+	glScalef(80, 80, 80);
+	//glScalef(10, 10, 10);
 	glBegin(GL_TRIANGLES);
 	for(i = 0; i < mesh->numFaces; i++) {
 		Edge *edge = mesh->faces[i]->edge;
@@ -144,24 +144,28 @@ void keyboardInput(unsigned char key, int x, int y) {
 	__UNUSED(y);
 	switch(key) {
 		case '1': {
-			int index = 0;
-			for(int i = 0; i < mesh->numEdges; i++) {
-				Edge* e = mesh->edges[i];
-				printf("Checking edge: %d from %d to %d\n", i, e->pair->vert->index, e->vert->index);
-				collapsable(mesh->edges[i]);
-			}
-			while(!collapsable(mesh->edges[index]) && index < mesh->numEdges)
-				index++;
-			if(index == mesh->numEdges) {
-				printf("No collapsable edges left.\n");
-				break;
-			}
-			printf("Deleting edge: %d\n", index);
-			collapseEdge(mesh, mesh->edges[index]);
+				for(int i = 0; i < 10; i++) {
+					int index = 0;
+					/*for(int i = 0; i < mesh->numEdges; i++) {
+						Edge* e = mesh->edges[i];
+						printf("Checking edge: %d from %d to %d\n", i, e->pair->vert->index, e->vert->index);
+						collapsable(mesh->edges[i]);
+					}*/
+					while(!collapsable(mesh->edges[index]) && index < mesh->numEdges)
+						index++;
+					if(index == mesh->numEdges) {
+						printf("No collapsable edges left.\n");
+						break;
+					}
+					collapseEdge(mesh, mesh->edges[index]);
+				}
 			break;
 		}
 		case 'l':
 			lines = 1 - lines;
+			break;
+		case 'p':
+			printMesh(mesh, stdout);
 			break;
 		default: break;
 

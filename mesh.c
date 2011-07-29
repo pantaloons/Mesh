@@ -161,7 +161,6 @@ void collapseEdge(Mesh *m, Edge *e) {
 	deleteEdge(m, d2);
 	deleteFace(m, e->face);
 	deleteFace(m, e->pair->face);
-	printf("Deleting vert %d\n", e->vert->index);
 	deleteVert(m, e->vert);
 	deleteEdge(m, e->pair);
 	deleteEdge(m, e);

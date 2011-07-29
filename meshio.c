@@ -119,6 +119,7 @@ Mesh* readMesh(char* fileName) {
 		}
 		verts[i] = malloc(sizeof(Vertex));
 		verts[i]->index = i;
+		verts[i]->iindex = i;
 		fscanf(f, "%f %f %f", &(verts[i]->x), &(verts[i]->y), &(verts[i]->z));
 	}
 	printf("100%% complete.\n");
@@ -159,6 +160,7 @@ Mesh* readMesh(char* fileName) {
 		
 		faces[i] = malloc(sizeof(Face));
 		faces[i]->index = i;
+		faces[i]->iindex = i;
 		
 		edge1 = malloc(sizeof(Edge));
 		edge2 = malloc(sizeof(Edge));
@@ -166,6 +168,10 @@ Mesh* readMesh(char* fileName) {
 		edges[3 * i] = edge1;
 		edges[3 * i + 1] = edge2;
 		edges[3 * i + 2] = edge3;
+		
+		edge1->iindex = 3 * i;
+		edge2->iindex = 3 * i + 1;
+		edge3->iindex = 3 * i + 2;
 		
 		edge1->index = 3 * i;
 		edge1->vert = verts[v2];
@@ -192,7 +198,7 @@ Mesh* readMesh(char* fileName) {
 		
 		if(!visited[v1]) {
 			visited[v1] = 1;
-			verts[v1]->edge = edge1;
+			verts[v1]->edge = edge3;
 		}
 		if(!visited[v2]) {
 			visited[v2] = 1;
@@ -200,7 +206,7 @@ Mesh* readMesh(char* fileName) {
 		}
 		if(!visited[v3]) {
 			visited[v3] = 1;
-			verts[v3]->edge = edge1;
+			verts[v3]->edge = edge2;
 		}
 		
 		e1p = mapGet(edgeMap, ei1);
@@ -239,4 +245,23 @@ Mesh* readMesh(char* fileName) {
 	
 	m = initMesh(numVertices, numFaces, 3 * numFaces, verts, faces, edges);
 	return m;
+}
+
+void printMesh(Mesh *m, FILE *f) {
+	fprintf(f, "OFF\n");
+	fprintf(f, "%d %d 0\n", m->numVertices, m->numFaces);
+	for(int i = 0; i < m->numVertices; i++) {
+		fprintf(f, "%f %f %f\n", m->verts[i]->x,  m->verts[i]->y,  m->verts[i]->z);
+	}
+	for(int i = 0; i < m->numFaces; i++) {
+		fprintf(f, "3 %d %d %d\n", m->faces[i]->edge->vert->index, m->faces[i]->edge->next->vert->index, m->faces[i]->edge->next->next->vert->index);
+	}
+	
+	/** Test Stuff **/
+	/*
+	fprintf(f, "\n");
+	for(int i = 0; i < m->numVertices; i++) {
+		fprintf(f, "%d: ", m->verts[i]->index);
+		fprintf(f, " (%d -> %d)\n", m->verts[i]->index, m->verts[i]->edge->pair->vert->index);
+	}*/
 }

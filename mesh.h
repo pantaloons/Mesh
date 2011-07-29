@@ -5,6 +5,7 @@
 
 typedef struct _edge {
 	int index;
+	int iindex;
 	struct _vertex *vert;
 	struct _face *face;
 	struct _edge *prev, *next, *pair;
@@ -12,12 +13,14 @@ typedef struct _edge {
 
 typedef struct _vertex {
 	int index;
+	int iindex;
 	float x, y, z;
 	struct _edge *edge;
 } Vertex;
 
 typedef struct _face {
 	int index;
+	int iindex;
 	struct _edge *edge;
 } Face;
 
