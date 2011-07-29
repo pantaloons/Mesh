@@ -53,7 +53,6 @@ int edgeHash(HashMap *map, EdgeID id) {
 */
 void mapPut(HashMap *map, EdgeID key, Edge *value) {
 	int hash = edgeHash(map, key);
-	MapNode *node = map->map[hash];
 	MapNode *newNode = malloc(sizeof(MapNode));
 	newNode->next = map->map[hash];
 	newNode->key.v1 = key.v1;
@@ -91,7 +90,7 @@ Mesh* readMesh(char* fileName) {
 	Edge *edge1, *edge2, *edge3;
 	Edge *e1p, *e2p, *e3p;
 	Mesh *m;
-	int i;
+	int i, foundPairs;
 	double progress = -1.0f, curProgress = 0.0f;
 	
 	f = fopen(fileName, "r");
@@ -128,6 +127,7 @@ Mesh* readMesh(char* fileName) {
 	visited = malloc(numVertices * sizeof(int));
 	for(i = 0; i < numVertices; i++) visited[i] = 0;
 	edgeMap = initMap(MAP_CAPACITY);
+	foundPairs = 0;
 	printf("Loading %d faces...\n", numFaces);
 	for(i = 0; i < numFaces; i++) {
 		curProgress = i/(float)numFaces;
@@ -208,6 +208,7 @@ Mesh* readMesh(char* fileName) {
 		else {
 			edge1->pair = e1p;
 			e1p->pair = edge1;
+			foundPairs += 2;
 		}
 		
 		e2p = mapGet(edgeMap, ei2);
@@ -215,6 +216,7 @@ Mesh* readMesh(char* fileName) {
 		else {
 			edge2->pair = e2p;
 			e2p->pair = edge2;
+			foundPairs += 2;
 		}
 		
 		e3p = mapGet(edgeMap, ei3);
@@ -222,7 +224,12 @@ Mesh* readMesh(char* fileName) {
 		else {
 			edge3->pair = e3p;
 			e3p->pair = edge3;
+			foundPairs += 2;
 		}
+	}
+	if(foundPairs != numFaces * 3) {
+		printf("Mesh in file %s is non-manifold. %d\n", fileName, foundPairs);
+		exit(6);
 	}
 	printf("100%% complete.\n");
 	

@@ -28,10 +28,10 @@ void destroyMesh(Mesh* m) {
 * The vertex should be removed from the mesh before being deleted.
 */
 void deleteVert(Mesh *m, Vertex *v) {
-	/*m->verts[v->index] = m->verts[m->numVertices - 1];
+	m->verts[v->index] = m->verts[m->numVertices - 1];
 	m->verts[v->index]->index = v->index;
-	m->numVertices--;
-	free(v);*/
+	m->numVertices -= 1;
+	free(v);
 }
 
 /**
@@ -40,10 +40,10 @@ void deleteVert(Mesh *m, Vertex *v) {
 * The edge should be removed from the mesh before being deleted.
 */
 void deleteEdge(Mesh *m, Edge *e) {
-	/*m->edges[e->index] = m->edges[m->numEdges - 1];
+	m->edges[e->index] = m->edges[m->numEdges - 1];
 	m->edges[e->index]->index = e->index;
-	m->numEdges--;
-	free(e);*/
+	m->numEdges -= 1;
+	free(e);
 }
 
 /**
@@ -54,7 +54,7 @@ void deleteEdge(Mesh *m, Edge *e) {
 void deleteFace(Mesh *m, Face *f) {
 	m->faces[f->index] = m->faces[m->numFaces - 1];
 	m->faces[f->index]->index = f->index;
-	m->numFaces--;
+	m->numFaces -= 1;
 	free(f);
 }
 
@@ -87,14 +87,17 @@ int collapsable(Edge *e) {
 	if(e->pair != NULL && boundaryVertex(e->vert) && boundaryVertex(e->pair->vert)) return 0;
 	
 	/* Case (c), the intersection of the one ring neighbourhoods of the incident vertices
-	   contains more than just the two incident vertices */
+	   contains more than just the two incident vertices */	
 	a = e->next->vert;
 	b = e->pair->next->vert;
 	ring1 = e;
 	do {
 		ring2 = e->pair;
-		do {
-			if(ring1->pair->vert == ring2->pair->vert && ring1->pair->vert != a && ring1->pair->vert != b) return 0;
+		do {			
+			Vertex *v1 = ring1->pair->vert;
+			Vertex *v2 = ring2->pair->vert;
+			if(v1 == v2 && v1 != a && v1 != b) return 0;
+			
 			ring2 = ring2->pair->prev;
 		}
 		while(ring2 != e->pair);
@@ -117,47 +120,48 @@ void collapseEdge(Mesh *m, Edge *e) {
 	Edge *d1 = e->pair->prev;
 	Edge *d2 = d1->pair;
 	
-	/* Re link left side traingle */
-	a->prev = b2->prev;
-	a->next = b2->next;
-	a->face = b2->face;
-	
-	/* Re link right side triangle */
-	c->prev = d2->prev;
-	c->next = d2->next;
-	c->face = d2->face;
-	
-	/* Re link edge referred to by P */
 	p = e->pair->vert;
-	if(p->edge == e->pair) p->edge = a;
-	
 	/* Re link vertex of edges incident at Q to P */
 	edge = d1;
 	do {
 		edge = edge->pair->prev;
 		edge->vert = p;
-	} while(edge != d1);
+	} while(edge != b2);
 	
-	/* Re link edges that referenced b2, d2 */
-	a->prev->next = a;
-	a->next->prev = a;
-	if(a->face->edge == b2) a->face->edge = a;
+	/* Re link left side traingle */
+	a->prev = b2->prev;
+	b2->prev->next = a;
+	a->next = b2->next;
+	b2->next->prev = a;
+	a->face = b2->face;
+	if(b2->face->edge == b2) b2->face->edge = a;
 	if(b1->vert->edge == b1) b1->vert->edge = a->pair;
 	
-	a->prev->next = c;
-	c->next->prev = c;
-	if(c->face->edge == d2) c->face->edge = c;
+	/* Re link right side triangle */
+	c->prev = d2->prev;
+	d2->prev->next = c;
+	c->next = d2->next;
+	d2->next->prev = c;
+	c->face = d2->face;
+	if(d2->face->edge == d2) d2->face->edge = c;
 	if(c->vert->edge == d2) c->vert->edge = c;
 	
-	/*
+	/* Re link edge referred to by P */
+	p = e->pair->vert;
+	if(p->edge == e->pair) p->edge = a;
+	
+	
 	//p->x = (p->x + e->vert->x)/2.0f;
 	//p->y = (p->y + e->vert->y)/2.0f;
-	//p->z = (p->z + e->vert->z)/2.0f;*/
+	//p->z = (p->z + e->vert->z)/2.0f;
 	
 	deleteEdge(m, b1);
 	deleteEdge(m, d1);
+	deleteEdge(m, b2);
+	deleteEdge(m, d2);
 	deleteFace(m, e->face);
 	deleteFace(m, e->pair->face);
+	printf("Deleting vert %d\n", e->vert->index);
 	deleteVert(m, e->vert);
 	deleteEdge(m, e->pair);
 	deleteEdge(m, e);
