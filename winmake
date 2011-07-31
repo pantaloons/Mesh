@@ -2,7 +2,7 @@ CC = cl
 
 all: cleanexe raptor.exe
 
-raptor.exe: raptor.obj mesh.obj meshio.obj
+raptor.exe: raptor.obj mesh.obj meshio.obj heap.obj
 	$(CC) /Zi /nologo /Feraptor.exe raptor.obj mesh.obj meshio.obj /link /LIBPATH:lib glut32.lib /DEBUG
 	
 raptor.obj: raptor.c
@@ -14,8 +14,11 @@ meshio.obj: meshio.c
 mesh.obj: mesh.c
 	$(CC) /Zi /nologo /c mesh.c
 	
+heap.obj: heap.c
+	$(CC) /Zi /nologo /c heap.c
+	
 clean:
-	del raptor.exe raptor.obj meshio.obj mesh.obj *.pdb *.suo *.ilk 2>NUL
+	del raptor.exe raptor.obj meshio.obj mesh.obj heap.obj *.pdb *.suo *.ilk 2>NUL
 	
 cleanexe:
 	del raptor.exe 2>NUL

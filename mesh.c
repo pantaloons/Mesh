@@ -22,6 +22,28 @@ void destroyMesh(Mesh* m) {
 	free(m);
 }
 
+void faceNormal(Face *f, float result[3]) {
+	Edge *edge = f->edge;
+	
+	Vertex *vert = edge->vert;
+	Vertex *v2 = edge->next->vert;
+	Vertex *v3 = edge->prev->vert;
+	
+	float dx1 = (v2->x - vert->x), dx2 = (v3->x - vert->x);
+	float dy1 = (v2->y - vert->y), dy2 = (v3->y - vert->y);
+	float dz1 = (v2->z - vert->z), dz2 = (v3->z - vert->z);
+	
+	float cx = dy1*dz2 - dz1*dy2;
+	float cy = dz1*dx2 - dx1*dz2;
+	float cz = dx1*dy2 - dy1*dx2;
+	
+	float len = sqrt(cx * cx + cy * cy + cz * cz);
+	
+	result[0] = cx/len;
+	result[1] = cy/len;
+	result[2] = cz/len;
+}
+
 /**
 * Deletes the vertex out of the mesh. This does NOT "remove" it
 * from said mesh and will leave dangling references if called wrongly.
@@ -70,6 +92,35 @@ int boundaryVertex(Vertex *v) {
 	while(e != v->edge);
 	return 0;
 }
+
+/**
+* Perform edge flipping to obtain a locally delaunay triangulation around e
+*/
+void localDelaunay(Mesh *m, Edge *e) {
+	return;
+}
+
+/**
+* Simple edge removal cost as in lecture notes. Dihedral angle between triangles combined with length of the edge joining them
+*/
+float simpleCost(Edge *e) {
+	float normal1[3], normal2[3];
+	float dx, dy, dz;
+	faceNormal(e->face, normal1);
+	faceNormal(e->pair->face, normal2);
+	dx = e->vert->x - e->pair->vert->x;
+	dy = e->vert->y - e->pair->vert->y;
+	dz = e->vert->z - e->pair->vert->z;
+	return acos(normal1[0] * normal2[0] + normal1[1] * normal2[1] + normal1[2] * normal2[2]) + sqrt(dx * dx + dy * dy + dz * dz);
+}
+
+/**
+* Garland edge removal cost..
+*/
+float garlandCost(Edge *e) {
+	return 0.0f;
+}
+
 
 /**
 * Determine if the edge e is collapsable without causing topology errors
@@ -151,9 +202,9 @@ void collapseEdge(Mesh *m, Edge *e) {
 	if(p->edge == e->pair) p->edge = a;
 	
 	
-	//p->x = (p->x + e->vert->x)/2.0f;
-	//p->y = (p->y + e->vert->y)/2.0f;
-	//p->z = (p->z + e->vert->z)/2.0f;
+	p->x = (p->x + e->vert->x)/2.0f;
+	p->y = (p->y + e->vert->y)/2.0f;
+	p->z = (p->z + e->vert->z)/2.0f;
 	
 	deleteEdge(m, b1);
 	deleteEdge(m, d1);
@@ -164,4 +215,6 @@ void collapseEdge(Mesh *m, Edge *e) {
 	deleteVert(m, e->vert);
 	deleteEdge(m, e->pair);
 	deleteEdge(m, e);
+	
+	localDelaunay(m, a);
 }

@@ -13,6 +13,7 @@
 #include <GL/glut.h>
 #endif
 
+#include "heap.h"
 #include "meshio.h"
 
 #define __UNUSED(x) (void)x;
@@ -29,7 +30,8 @@ int height = WINDOW_START_HEIGHT;
 unsigned long lastTick;
 int lines;
 
-Mesh* mesh;
+Mesh *mesh;
+Heap *heap;
 
 GLfloat lightMat[] = {1.0, 0.0, 0.0, 1.0}; 
 GLfloat lightPos[] = {1.0, 1.0, 1.0, 0.0};  /* Infinite light location. */
@@ -75,28 +77,19 @@ void reshape(GLint newWidth, GLint newHeight) {
 
 void render(void) {
 	int i;
+	Edge *edge;
+	float normal[3];
 	glPushMatrix();
 	glRotatef(yrot, 0.0f, 1.0f, 0.0f);  
 	glScalef(80, 80, 80);
 	//glScalef(10, 10, 10);
 	glBegin(GL_TRIANGLES);
 	for(i = 0; i < mesh->numFaces; i++) {
-		Edge *edge = mesh->faces[i]->edge;
+		faceNormal(mesh->faces[i], normal);
+		edge = mesh->faces[i]->edge;
 		do {
-			Vertex *vert = edge->vert;
-			Vertex *v2 = edge->next->vert;
-			Vertex *v3 = edge->prev->vert;
-			
-			double dx1 = (v2->x - vert->x), dx2 = (v3->x - vert->x);
-			double dy1 = (v2->y - vert->y), dy2 = (v3->y - vert->y);
-			double dz1 = (v2->z - vert->z), dz2 = (v3->z - vert->z);
-			
-			double cx = dy1*dz2 - dz1*dy2;
-			double cy = dz1*dx2 - dx1*dz2;
-			double cz = dx1*dy2 - dy1*dx2;
-			
-			glNormal3f(cx, cy, cz);
-			glVertex3f(vert->x, vert->y, vert->z);
+			glNormal3f(normal[0], normal[1], normal[2]);
+			glVertex3f(edge->vert->x, edge->vert->y, edge->vert->z);
 			edge = edge->next;
 		}
 		while(edge != mesh->faces[i]->edge);
@@ -140,25 +133,19 @@ void deallocate(void) {
 }
 
 void keyboardInput(unsigned char key, int x, int y) {
+	int index;
 	__UNUSED(x);
 	__UNUSED(y);
 	switch(key) {
 		case '1': {
-				for(int i = 0; i < 10; i++) {
-					int index = 0;
-					/*for(int i = 0; i < mesh->numEdges; i++) {
-						Edge* e = mesh->edges[i];
-						printf("Checking edge: %d from %d to %d\n", i, e->pair->vert->index, e->vert->index);
-						collapsable(mesh->edges[i]);
-					}*/
-					while(!collapsable(mesh->edges[index]) && index < mesh->numEdges)
-						index++;
-					if(index == mesh->numEdges) {
-						printf("No collapsable edges left.\n");
-						break;
-					}
-					collapseEdge(mesh, mesh->edges[index]);
-				}
+			index = 0;
+			while(!collapsable(mesh->edges[index]) && index < mesh->numEdges)
+				index++;
+			if(index == mesh->numEdges) {
+				printf("No collapsable edges left.\n");
+				break;
+			}
+			collapseEdge(mesh, mesh->edges[index]);
 			break;
 		}
 		case 'l':
@@ -190,6 +177,7 @@ void specialInput(int k, int x, int y) {
 
 int main(int argc, char** argv) {
 	mesh = readMesh(MODEL_FILE);
+	heap = heapInit(mesh, simpleCost);
 	
 	atexit(deallocate);
 	glutInit(&argc, argv);

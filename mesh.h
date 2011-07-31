@@ -2,6 +2,7 @@
 #define __MESH_H__
 
 #include <stdlib.h>
+#include <math.h>
 
 typedef struct _edge {
 	int index;
@@ -31,9 +32,16 @@ typedef struct _mesh {
 Mesh* initMesh(int numVertices, int numFaces, int numEdges, Vertex **verts, Face **faces, Edge **edges);
 void destroyMesh(Mesh *m);
 
+void faceNormal(Face *f, float result[3]);
+
 void deleteVert(Mesh *m, Vertex *v);
 void deleteEdge(Mesh *m, Edge *e);
 void deleteFace(Mesh *m, Face *f);
+
+void localDelaunay(Mesh *m, Edge *e);
+
+float simpleCost(Edge *e);
+float garlandCost(Edge *e);
 
 int collapsable(Edge *e);
 void collapseEdge(Mesh *m, Edge *edge);
