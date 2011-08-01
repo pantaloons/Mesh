@@ -3,31 +3,8 @@
 
 #include <stdlib.h>
 #include <math.h>
-
-typedef struct _edge {
-	int index;
-	struct _vertex *vert;
-	struct _face *face;
-	struct _edge *prev, *next, *pair;
-} Edge;
-
-typedef struct _vertex {
-	int index;
-	float x, y, z;
-	struct _edge *edge;
-} Vertex;
-
-typedef struct _face {
-	int index;
-	struct _edge *edge;
-} Face;
-
-typedef struct _mesh {
-	int numEdges, numVertices, numFaces;
-	struct _edge **edges;
-	struct _face **faces;
-	struct _vertex **verts;
-} Mesh;
+#include "types.h"
+#include "heap.h"
 
 Mesh* initMesh(int numVertices, int numFaces, int numEdges, Vertex **verts, Face **faces, Edge **edges);
 void destroyMesh(Mesh *m);
@@ -38,12 +15,15 @@ void deleteVert(Mesh *m, Vertex *v);
 void deleteEdge(Mesh *m, Edge *e);
 void deleteFace(Mesh *m, Face *f);
 
-void localDelaunay(Mesh *m, Edge *e);
+void localDelaunay(Mesh *m, Vertex *e);
+void recalculate(Mesh *m, Vertex *v);
 
 float simpleCost(Edge *e);
+float melaxCost(Edge *e);
 float garlandCost(Edge *e);
 
 int collapsable(Edge *e);
-void collapseEdge(Mesh *m, Edge *edge);
+void reduce(Mesh *m);
+Vertex *collapseEdge(Mesh *m, Edge *e);
 
 #endif
