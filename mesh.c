@@ -1,5 +1,8 @@
 #include "mesh.h"
 
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+
 Mesh *initMesh(int numVertices, int numFaces, int numEdges, Vertex** verts, Face** faces, Edge** edges) {
 	Mesh *m = malloc(sizeof(Mesh));
 	m->numVertices = numVertices;
@@ -8,11 +11,13 @@ Mesh *initMesh(int numVertices, int numFaces, int numEdges, Vertex** verts, Face
 	m->verts = verts;
 	m->faces = faces;
 	m->edges = edges;
+	m->heap = initHeap(m, melaxCost, collapsable);
 	return m;
 }
 
 void destroyMesh(Mesh* m) {
 	int i;
+	destroyHeap(m->heap);
 	for(i = 0; i < m->numEdges; i++) free(m->edges[i]);
 	for(i = 0; i < m->numVertices; i++) free(m->verts[i]);
 	for(i = 0; i < m->numFaces; i++) free(m->faces[i]);
@@ -65,6 +70,7 @@ void deleteEdge(Mesh *m, Edge *e) {
 	m->edges[e->index] = m->edges[m->numEdges - 1];
 	m->edges[e->index]->index = e->index;
 	m->numEdges -= 1;
+	removeEdge(m->heap, e);
 	free(e);
 }
 
@@ -96,8 +102,21 @@ int boundaryVertex(Vertex *v) {
 /**
 * Perform edge flipping to obtain a locally delaunay triangulation around e
 */
-void localDelaunay(Mesh *m, Edge *e) {
+void localDelaunay(Mesh *m, Vertex *v) {
+	__UNUSED(m);
+	__UNUSED(v);
 	return;
+}
+
+/**
+ * Recalculate edge removal costs for all edges adjacent to v
+ */
+void recalculate(Mesh *m, Vertex *v) {
+	Edge *edge = v->edge;
+	do {
+		recalculateKey(m->heap, edge);
+		edge = edge->pair->prev;
+	} while(edge != v->edge);
 }
 
 /**
@@ -115,9 +134,43 @@ float simpleCost(Edge *e) {
 }
 
 /**
+* Simple edge removal cost as in lecture notes. Dihedral angle between triangles combined with length of the edge joining them
+*/
+float melaxCost(Edge *e) {
+	float normal1[3], normal2[3];
+	float dx, dy, dz;
+	float minCurv;
+	float curvature = 0.0f;
+	Edge *edge2;
+	
+	Edge *edge = e;
+	do {
+		minCurv = 1.0f;
+		edge2 = e;
+		do {
+			faceNormal(edge->face, normal1);
+			faceNormal(edge2->face, normal2);
+			float dotprod = normal1[0] * normal2[0] + normal1[1] * normal2[1] + normal1[2] * normal2[2];
+			minCurv = MIN(minCurv, (1.0f - dotprod)/2.0f);
+			edge2 = edge2->pair;
+		} while(edge2 != e);
+		curvature = MAX(curvature, minCurv);
+		edge = edge->pair->prev;
+	} while(edge != e);
+
+	dx = e->vert->x - e->pair->vert->x;
+	dy = e->vert->y - e->pair->vert->y;
+	dz = e->vert->z - e->pair->vert->z;
+	
+	return curvature * sqrt(dx * dx + dy * dy + dz * dz);
+}
+
+
+/**
 * Garland edge removal cost..
 */
 float garlandCost(Edge *e) {
+	__UNUSED(e);
 	return 0.0f;
 }
 
@@ -159,7 +212,21 @@ int collapsable(Edge *e) {
 	return 1;
 }
 
-void collapseEdge(Mesh *m, Edge *e) {
+void reduce(Mesh *m) {
+	Edge *e;
+	Vertex *v;
+	while(1) {
+		e = removeMin(m->heap);
+		if(e == NULL) return;
+		else if(!collapsable(e)) e->heapNode = NULL;
+		else break;
+	}
+	v = collapseEdge(m, e);
+	localDelaunay(m, v);
+	recalculate(m, v);
+}
+
+Vertex *collapseEdge(Mesh *m, Edge *e) {
 	Edge *edge;
 	Vertex *p;
 	
@@ -202,9 +269,9 @@ void collapseEdge(Mesh *m, Edge *e) {
 	if(p->edge == e->pair) p->edge = a;
 	
 	
-	p->x = (p->x + e->vert->x)/2.0f;
-	p->y = (p->y + e->vert->y)/2.0f;
-	p->z = (p->z + e->vert->z)/2.0f;
+	//p->x = (p->x + e->vert->x)/2.0f;
+	//p->y = (p->y + e->vert->y)/2.0f;
+	//p->z = (p->z + e->vert->z)/2.0f;
 	
 	deleteEdge(m, b1);
 	deleteEdge(m, d1);
@@ -216,5 +283,5 @@ void collapseEdge(Mesh *m, Edge *e) {
 	deleteEdge(m, e->pair);
 	deleteEdge(m, e);
 	
-	localDelaunay(m, a);
+	return p;
 }
