@@ -2,28 +2,19 @@
 #define __HEAP_H__
 
 #include <stdlib.h>
+#include "types.h"
+#define __UNUSED(x) (void)x;
 
-typedef struct _edge {
-	int index;
-	struct _vertex *vert;
-	struct _face *face;
-	struct _edge *prev, *next, *pair;
-} Edge;
+Heap *initHeap(Mesh *m, float (*f)(Edge*), int (*test)(Edge*));
+void destroyHeap(Heap *h);
 
-typedef struct _edgenode {
-	float cost;
-	Edge* edge;
-} EdgeNode;
+void recalculateKey(Heap *h, Edge *edge);
 
-typedef struct _edgeheap {
-	int capacity;
-	int size;
-	EdgeNode **heap;
-	float (*func)(Edge*); /* Pointer to edge evaluation function */
-} Heap;
-
-Heap *heapInit(Mesh *m, float (*f)(Edge*) );
-void heapInsert(Heap *h, Edge *edge);
+EdgeNode *heapInsert(Heap *h, Edge *edge);
 Edge *removeMin(Heap *h);
+void removeEdge(Heap *h, Edge *e);
+
+void siftdown(Heap *h, int index);
+void siftup(Heap *h, int index);
 
 #endif
