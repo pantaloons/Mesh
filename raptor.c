@@ -133,19 +133,12 @@ void deallocate(void) {
 }
 
 void keyboardInput(unsigned char key, int x, int y) {
-	int index;
 	__UNUSED(x);
 	__UNUSED(y);
 	switch(key) {
 		case '1': {
-			index = 0;
-			while(!collapsable(mesh->edges[index]) && index < mesh->numEdges)
-				index++;
-			if(index == mesh->numEdges) {
-				printf("No collapsable edges left.\n");
-				break;
-			}
-			collapseEdge(mesh, mesh->edges[index]);
+			reduce(mesh);
+			//printMesh(mesh, stdout);
 			break;
 		}
 		case 'l':
@@ -177,7 +170,6 @@ void specialInput(int k, int x, int y) {
 
 int main(int argc, char** argv) {
 	mesh = readMesh(MODEL_FILE);
-	heap = heapInit(mesh, simpleCost);
 	
 	atexit(deallocate);
 	glutInit(&argc, argv);
