@@ -1,13 +1,16 @@
 CC = gcc
 CFLAGS = -g -Wall -Wextra -std=c99 -pedantic
-LDFLAGS = -lglut -lGLU -lGL --stack=67108864
+LDFLAGS = -lm -lglut -lGLU -lGL
 
 all: raptor
 
-raptor: raptor.o mesh.o meshio.o
+raptor: raptor.o mesh.o meshio.o heap.o
 	$(CC) $(LDFLAGS) -o $@ $^
 	
 raptor.o: raptor.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+	
+heap.o: heap.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 	
 meshio.o: meshio.c
@@ -17,6 +20,6 @@ mesh.o: mesh.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 	
 clean:
-	rm -f raptor raptor.o meshio.o mesh.o core.* vgcore.*
+	rm -f raptor raptor.o meshio.o mesh.o heap.o core.* vgcore.*
 	
 .PHONY: clean
