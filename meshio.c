@@ -9,9 +9,9 @@
 
 HashMap* initMap(int capacity) {
 	int i;
-	HashMap* map = malloc(sizeof(HashMap));
+	HashMap* map = (HashMap*)malloc(sizeof(HashMap));
 	map->modulus = capacity;
-	map->map = malloc(capacity * sizeof(MapNode*));
+	map->map = (MapNode**)malloc(capacity * sizeof(MapNode*));
 	for(i = 0; i < capacity; i++) map->map[i] = NULL;
 	return map;
 }
@@ -53,7 +53,7 @@ int edgeHash(HashMap *map, EdgeID id) {
 */
 void mapPut(HashMap *map, EdgeID key, Edge *value) {
 	int hash = edgeHash(map, key);
-	MapNode *newNode = malloc(sizeof(MapNode));
+	MapNode *newNode = (MapNode*)malloc(sizeof(MapNode));
 	newNode->next = map->map[hash];
 	newNode->key.v1 = key.v1;
 	newNode->key.v2 = key.v2;
@@ -106,9 +106,9 @@ Mesh* readMesh(char* fileName) {
 	
 	fscanf(f, "%d %d %d", &numVertices, &numFaces, &numEdges);
 	
-	verts = malloc(numVertices * sizeof(Vertex*));
-	faces = malloc(numFaces * sizeof(Face*));
-	edges = malloc(3 * numFaces * sizeof(Edge*));
+	verts = (Vertex**)malloc(numVertices * sizeof(Vertex*));
+	faces = (Face**)malloc(numFaces * sizeof(Face*));
+	edges = (Edge**)malloc(3 * numFaces * sizeof(Edge*));
 	
 	printf("Loading %d verticies...\n", numVertices);
 	for(i = 0; i < numVertices; i++) {
@@ -117,14 +117,14 @@ Mesh* readMesh(char* fileName) {
 			progress = curProgress;
 			printf("%d%% complete.\n", (int)(progress * 100));
 		}
-		verts[i] = malloc(sizeof(Vertex));
+		verts[i] = (Vertex*)malloc(sizeof(Vertex));
 		verts[i]->index = i;
 		fscanf(f, "%f %f %f", &(verts[i]->x), &(verts[i]->y), &(verts[i]->z));
 	}
 	printf("100%% complete.\n");
 	
 	progress = -1.0f;
-	visited = malloc(numVertices * sizeof(int));
+	visited = (int*)malloc(numVertices * sizeof(int));
 	for(i = 0; i < numVertices; i++) visited[i] = 0;
 	edgeMap = initMap(MAP_CAPACITY);
 	foundPairs = 0;
@@ -157,12 +157,12 @@ Mesh* readMesh(char* fileName) {
 		ei3.v1 = v3;
 		ei3.v2 = v1;
 		
-		faces[i] = malloc(sizeof(Face));
+		faces[i] = (Face*)malloc(sizeof(Face));
 		faces[i]->index = i;
 		
-		edge1 = malloc(sizeof(Edge));
-		edge2 = malloc(sizeof(Edge));
-		edge3 = malloc(sizeof(Edge));
+		edge1 = (Edge*)malloc(sizeof(Edge));
+		edge2 = (Edge*)malloc(sizeof(Edge));
+		edge3 = (Edge*)malloc(sizeof(Edge));
 		edges[3 * i] = edge1;
 		edges[3 * i + 1] = edge2;
 		edges[3 * i + 2] = edge3;
@@ -227,11 +227,11 @@ Mesh* readMesh(char* fileName) {
 			foundPairs += 2;
 		}
 	}
+	printf("100%% complete.\n");
 	if(foundPairs != numFaces * 3) {
-		printf("Mesh in file %s is non-manifold. %d\n", fileName, foundPairs);
+		printf("Mesh in file %s is non-manifold.\n", fileName);
 		exit(6);
 	}
-	printf("100%% complete.\n");
 	
 	destroyMap(edgeMap);
 	fclose(f);

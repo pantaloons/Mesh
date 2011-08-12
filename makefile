@@ -1,5 +1,5 @@
-CC = gcc
-CFLAGS = -g -Wall -Wextra -std=c99 -pedantic
+CC = g++
+CFLAGS = -g -Wall -Wextra -pedantic
 LDFLAGS = -lm -lglut -lGLU -lGL
 
 all: raptor

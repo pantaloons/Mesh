@@ -4,7 +4,7 @@
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
 Mesh *initMesh(int numVertices, int numFaces, int numEdges, Vertex** verts, Face** faces, Edge** edges) {
-	Mesh *m = malloc(sizeof(Mesh));
+	Mesh *m = (Mesh*)malloc(sizeof(Mesh));
 	m->numVertices = numVertices;
 	m->numFaces = numFaces;
 	m->numEdges = numEdges;
@@ -99,13 +99,97 @@ int boundaryVertex(Vertex *v) {
 	return 0;
 }
 
+void edgeFlip(Edge *e) {
+	Edge *ep = e->prev;
+	Edge *en = e->next;
+	Edge *epp = e->pair->prev;
+	Edge *epn = e->pair->next;
+	
+	e->vert->edge = e->next->pair;
+	e->pair->vert->edge = e->pair->next->pair;
+	
+	e->next->prev = e->pair->prev;
+	e->next->next = e;
+	e->prev->next = e->pair->next;
+	e->prev->prev = e->pair;
+	
+	e->pair->next->prev = e->prev;
+	e->pair->next->next = e->pair;
+	e->pair->prev->next = e->next;
+	e->pair->prev->prev = e;
+	
+	e->prev = en;
+	e->next = epp;
+	
+	e->pair->prev = epn;
+	e->pair->next = ep;
+	
+	e->vert = epn->vert;
+	e->pair->vert = en->vert;
+	
+	e->face->edge = e;
+	e->next->face = e->face;
+	e->prev->face = e->face;
+	
+	e->pair->face->edge = e->pair;
+	e->pair->next->face = e->pair->face;
+	e->pair->prev->face = e->pair->face;
+}
+
+double minAngle(Face *f1) {
+	Edge *e1 = f1->edge;
+	Edge *e2 = e1->next;
+	Edge *e3 = e2->next;
+	
+	double len1 = sqrt((e1->vert->x - e3->vert->x) * (e1->vert->x - e3->vert->x) +
+				  (e1->vert->y - e3->vert->y) * (e1->vert->y - e3->vert->y) +
+				  (e1->vert->z - e3->vert->z) * (e1->vert->z - e3->vert->z));
+	double len2 = sqrt((e1->vert->x - e3->vert->x) * (e1->vert->x - e3->vert->x) +
+				  (e1->vert->y - e3->vert->y) * (e1->vert->y - e3->vert->y) +
+				  (e1->vert->z - e3->vert->z) * (e1->vert->z - e3->vert->z));
+	double len3 = sqrt((e2->vert->x - e1->vert->x) * (e2->vert->x - e1->vert->x) +
+				  (e2->vert->y - e1->vert->y) * (e2->vert->y - e1->vert->y) +
+				  (e2->vert->z - e1->vert->z) * (e2->vert->z - e1->vert->z));
+				  
+	double t1 = acos(((e1->vert->x - e3->vert->x) * (e2->vert->x - e3->vert->x) +
+				(e1->vert->y - e3->vert->y) * (e2->vert->x - e3->vert->y) +
+				(e1->vert->z - e3->vert->z) * (e2->vert->x - e3->vert->z))/(len1 * len2));
+	
+	double t2 = acos(((e3->vert->x - e1->vert->x) * (e2->vert->x - e1->vert->x) +
+				(e3->vert->y - e1->vert->y) * (e2->vert->x - e1->vert->y) +
+				(e3->vert->z - e1->vert->z) * (e2->vert->x - e1->vert->z))/(len2 * len3));
+				
+	double t3 = acos(((e3->vert->x - e2->vert->x) * (e1->vert->x - e2->vert->x) +
+				(e3->vert->y - e2->vert->y) * (e1->vert->y - e2->vert->y) +
+				(e3->vert->z - e2->vert->z) * (e1->vert->z - e2->vert->z))/(len3 * len1));
+				
+	return MIN(t1, MIN(t2, t3));
+}
+
 /**
 * Perform edge flipping to obtain a locally delaunay triangulation around e
 */
-void localDelaunay(Mesh *m, Vertex *v) {
-	__UNUSED(m);
-	__UNUSED(v);
-	return;
+void localDelaunay(Vertex *v) {
+	int cap = 10, i, num = 0;
+	Edge** edges = (Edge**)malloc(cap * sizeof(Edge*));
+	Edge *e = v->edge;
+	do {
+		edges[num++] = e;
+		if(num >= cap) {
+			cap *= 2;
+			edges = (Edge**)realloc(edges, cap * sizeof(Edge*));
+		}
+		e = e->pair->prev;
+	} while(e != v->edge);
+	
+	for(i = 0; i < num - 1; i += 2) {
+		double angle1 = MIN(minAngle(edges[i]->face), minAngle(edges[i]->pair->face));
+		edgeFlip(edges[i]);
+		double angle2 = MIN(minAngle(edges[i]->face), minAngle(edges[i]->pair->face));
+		//printf("angle: %f %f\n", angle1, angle2);
+		if(angle1 > angle2) edgeFlip(edges[i]);
+	}
+	free(edges);
 }
 
 /**
@@ -113,8 +197,14 @@ void localDelaunay(Mesh *m, Vertex *v) {
  */
 void recalculate(Mesh *m, Vertex *v) {
 	Edge *edge = v->edge;
+	Edge *second;
 	do {
-		recalculateKey(m->heap, edge);
+		second = edge->pair;
+		do {
+			recalculateKey(m->heap, second);
+			recalculateKey(m->heap, second->pair);
+			second = second->pair->prev;
+		} while(second != edge->pair);
 		edge = edge->pair->prev;
 	} while(edge != v->edge);
 }
@@ -183,12 +273,12 @@ int collapsable(Edge *e) {
 	Vertex *a, *b;
 	/* Case (a), edge belongs to a triangle, where the other two edges are boundary edges 
 	   This shouldn't happen for manifolds */
-	if(e->next->pair == NULL && e->prev->pair == NULL) return 0;
-	if(e->pair != NULL && e->pair->next->pair == NULL && e->pair->prev->pair == NULL) return 0;
+	//if(e->next->pair == NULL && e->prev->pair == NULL) return 0;
+	//if(e->pair != NULL && e->pair->next->pair == NULL && e->pair->prev->pair == NULL) return 0;
 	
 	/* Case (b), incident vertices are boundary vertices but edge is not a boundary edge
 		This shouldn't happen for manifolds */
-	if(e->pair != NULL && boundaryVertex(e->vert) && boundaryVertex(e->pair->vert)) return 0;
+	//if(e->pair != NULL && boundaryVertex(e->vert) && boundaryVertex(e->pair->vert)) return 0;
 	
 	/* Case (c), the intersection of the one ring neighbourhoods of the incident vertices
 	   contains more than just the two incident vertices */	
@@ -197,7 +287,7 @@ int collapsable(Edge *e) {
 	ring1 = e;
 	do {
 		ring2 = e->pair;
-		do {			
+		do {
 			Vertex *v1 = ring1->pair->vert;
 			Vertex *v2 = ring2->pair->vert;
 			if(v1 == v2 && v1 != a && v1 != b) return 0;
@@ -222,7 +312,7 @@ void reduce(Mesh *m) {
 		else break;
 	}
 	v = collapseEdge(m, e);
-	localDelaunay(m, v);
+	//localDelaunay(v);
 	recalculate(m, v);
 }
 
@@ -269,9 +359,9 @@ Vertex *collapseEdge(Mesh *m, Edge *e) {
 	if(p->edge == e->pair) p->edge = a;
 	
 	
-	//p->x = (p->x + e->vert->x)/2.0f;
-	//p->y = (p->y + e->vert->y)/2.0f;
-	//p->z = (p->z + e->vert->z)/2.0f;
+	p->x = (p->x + e->vert->x)/2.0f;
+	p->y = (p->y + e->vert->y)/2.0f;
+	p->z = (p->z + e->vert->z)/2.0f;
 	
 	deleteEdge(m, b1);
 	deleteEdge(m, d1);

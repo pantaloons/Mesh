@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include <math.h>
 #include "types.h"
-#include "heap.h"
 
 Mesh* initMesh(int numVertices, int numFaces, int numEdges, Vertex **verts, Face **faces, Edge **edges);
 void destroyMesh(Mesh *m);
@@ -15,7 +14,8 @@ void deleteVert(Mesh *m, Vertex *v);
 void deleteEdge(Mesh *m, Edge *e);
 void deleteFace(Mesh *m, Face *f);
 
-void localDelaunay(Mesh *m, Vertex *e);
+void edgeFlip(Edge *e);
+void localDelaunay(Vertex *e);
 void recalculate(Mesh *m, Vertex *v);
 
 float simpleCost(Edge *e);

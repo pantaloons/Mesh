@@ -22,7 +22,7 @@
 #define WINDOW_START_HEIGHT 480
 #define SCENE_SPEED 1.0f
 #define CLOCK_RATE 1000
-#define MODEL_FILE "objects/eight.off"
+#define MODEL_FILE "objects/camel.off"
 
 int width = WINDOW_START_WIDTH;
 int height = WINDOW_START_HEIGHT;
@@ -137,6 +137,7 @@ void keyboardInput(unsigned char key, int x, int y) {
 	__UNUSED(y);
 	switch(key) {
 		case '1': {
+			for(int i = 0; i < 500; i++)
 			reduce(mesh);
 			//printMesh(mesh, stdout);
 			break;

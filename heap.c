@@ -1,7 +1,7 @@
 #include "heap.h"
 
 Heap *initHeap(Mesh *m, float (*f)(Edge*), int (*test)(Edge*)) {
-	Heap *h = malloc(sizeof(Heap));
+	Heap *h = (Heap*)malloc(sizeof(Heap));
 	EdgeNode *node;
 	int i;
 	
@@ -9,7 +9,7 @@ Heap *initHeap(Mesh *m, float (*f)(Edge*), int (*test)(Edge*)) {
 	h->size = 0;
 	h->func = f;
 	h->test = test;
-	h->heap = malloc(h->capacity * sizeof(EdgeNode*));
+	h->heap = (EdgeNode**)malloc(h->capacity * sizeof(EdgeNode*));
 	
 	/* TODO: We can do this in O(n), as is O(n logn) which isn't half bad, (factor of 2-8x) */
 	for(i = 0; i < m->numEdges; i++) {
@@ -33,7 +33,9 @@ void destroyHeap(Heap *h) {
 void recalculateKey(Heap *h, Edge *edge) {
 	float cost = (*h->func)(edge);
 	if(edge->heapNode != NULL && !(*h->test)(edge)) removeEdge(h, edge);
-	else if(edge->heapNode == NULL) heapInsert(h, edge);
+	else if(edge->heapNode == NULL) {
+		if((*h->test)(edge)) heapInsert(h, edge);
+	}
 	else if(cost == edge->heapNode->cost) return;
 	else {
 		if(cost < edge->heapNode->cost) {
@@ -49,13 +51,15 @@ void recalculateKey(Heap *h, Edge *edge) {
 
 EdgeNode *heapInsert(Heap *h, Edge *edge) {
 	float cost = (*h->func)(edge);
-	EdgeNode *current = malloc(sizeof(EdgeNode));
+	EdgeNode *current;
+	if(!(*h->test)(edge)) return NULL;
+	current = (EdgeNode*)malloc(sizeof(EdgeNode));
 	current->cost = cost;
 	current->edge = edge;
 	current->index = h->size;
 	
 	h->heap[h->size] = current;
-	h->size++;
+	h->size += 1;
 	siftup(h, h->size - 1);
 	
 	return current;
