@@ -135,9 +135,10 @@ void deallocate(void) {
 void keyboardInput(unsigned char key, int x, int y) {
 	__UNUSED(x);
 	__UNUSED(y);
+	int i;
 	switch(key) {
 		case '1': {
-			for(int i = 0; i < 500; i++)
+			for(i = 0; i < 500; i++)
 			reduce(mesh);
 			//printMesh(mesh, stdout);
 			break;

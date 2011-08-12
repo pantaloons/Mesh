@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include "types.h"
+#include "heap.h"
 
 Mesh* initMesh(int numVertices, int numFaces, int numEdges, Vertex **verts, Face **faces, Edge **edges);
 void destroyMesh(Mesh *m);
