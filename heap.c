@@ -32,9 +32,13 @@ void destroyHeap(Heap *h) {
 
 void recalculateKey(Heap *h, Edge *edge) {
 	float cost = (*h->func)(edge);
+	EdgeNode *node;
 	if(edge->heapNode != NULL && !(*h->test)(edge)) removeEdge(h, edge);
 	else if(edge->heapNode == NULL) {
-		if((*h->test)(edge)) heapInsert(h, edge);
+		if((*h->test)(edge)) {
+			node = heapInsert(h, edge);
+			edge->heapNode = node;
+		}
 	}
 	else if(cost == edge->heapNode->cost) return;
 	else {
@@ -69,6 +73,7 @@ Edge *removeMin(Heap *h) {
 	Edge *edge;
 	if(h->size == 0) return NULL;
 	edge = h->heap[0]->edge;
+	edge->heapNode = NULL;
 	
 	h->heap[0] = h->heap[h->size - 1];
 	h->heap[0]->index = 0;
@@ -85,6 +90,7 @@ void removeEdge(Heap *h, Edge *e) {
 	h->heap[e->heapNode->index]->index = e->heapNode->index;
 	h->size--;
 	siftdown(h, e->heapNode->index);
+	e->heapNode = NULL;
 }
 
 void siftdown(Heap *h, int index) {

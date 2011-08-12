@@ -11,7 +11,7 @@ Mesh *initMesh(int numVertices, int numFaces, int numEdges, Vertex** verts, Face
 	m->verts = verts;
 	m->faces = faces;
 	m->edges = edges;
-	m->heap = initHeap(m, melaxCost, collapsable);
+	m->heap = initHeap(m, simpleCost, collapsable);
 	return m;
 }
 
@@ -220,11 +220,12 @@ float simpleCost(Edge *e) {
 	dx = e->vert->x - e->pair->vert->x;
 	dy = e->vert->y - e->pair->vert->y;
 	dz = e->vert->z - e->pair->vert->z;
+	return sqrt(dx * dx + dy * dy + dz * dz);
 	return acos(normal1[0] * normal2[0] + normal1[1] * normal2[1] + normal1[2] * normal2[2]) + sqrt(dx * dx + dy * dy + dz * dz);
 }
 
 /**
-* Simple edge removal cost as in lecture notes. Dihedral angle between triangles combined with length of the edge joining them
+* Melax edge cost per linked paper. 
 */
 float melaxCost(Edge *e) {
 	float normal1[3], normal2[3];
@@ -305,14 +306,12 @@ int collapsable(Edge *e) {
 void reduce(Mesh *m) {
 	Edge *e;
 	Vertex *v;
-	while(1) {
-		e = removeMin(m->heap);
-		if(e == NULL) return;
-		else if(!collapsable(e)) e->heapNode = NULL;
-		else break;
-	}
+	e = removeMin(m->heap);
+	if(e == NULL) return;
+	
 	v = collapseEdge(m, e);
 	//localDelaunay(v);
+	recalculate(m, v);
 	recalculate(m, v);
 }
 
