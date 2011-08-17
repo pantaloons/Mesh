@@ -22,7 +22,7 @@
 #define WINDOW_START_HEIGHT 480
 #define SCENE_SPEED 1.0f
 #define CLOCK_RATE 1000
-#define MODEL_FILE "objects/camel.off"
+#define MODEL_FILE "objects/eight.off"
 
 int width = WINDOW_START_WIDTH;
 int height = WINDOW_START_HEIGHT;
@@ -82,7 +82,7 @@ void render(void) {
 	glPushMatrix();
 	glRotatef(yrot, 0.0f, 1.0f, 0.0f);  
 	glScalef(80, 80, 80);
-	//glScalef(10, 10, 10);
+	//1glScalef(10, 10, 10);
 	glBegin(GL_TRIANGLES);
 	for(i = 0; i < mesh->numFaces; i++) {
 		faceNormal(mesh->faces[i], normal);
@@ -138,7 +138,7 @@ void keyboardInput(unsigned char key, int x, int y) {
 	int i;
 	switch(key) {
 		case '1': {
-			for(i = 0; i < 500; i++)
+			for(i = 0; i < 50; i++)
 			reduce(mesh);
 			//printMesh(mesh, stdout);
 			break;

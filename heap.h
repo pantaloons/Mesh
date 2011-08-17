@@ -1,6 +1,7 @@
 #ifndef __HEAP_H__
 #define __HEAP_H__
 
+#include <stdio.h>
 #include <stdlib.h>
 #include "types.h"
 #define __UNUSED(x) (void)x;
@@ -16,5 +17,7 @@ void removeEdge(Heap *h, Edge *e);
 
 void siftdown(Heap *h, int index);
 void siftup(Heap *h, int index);
+
+int verifyHeap(Heap *h);
 
 #endif

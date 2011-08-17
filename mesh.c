@@ -11,7 +11,7 @@ Mesh *initMesh(int numVertices, int numFaces, int numEdges, Vertex** verts, Face
 	m->verts = verts;
 	m->faces = faces;
 	m->edges = edges;
-	m->heap = initHeap(m, simpleCost, collapsable);
+	m->heap = initHeap(m, melaxCost, collapsable);
 	return m;
 }
 
@@ -136,6 +136,13 @@ void edgeFlip(Edge *e) {
 	e->pair->prev->face = e->pair->face;
 }
 
+double magnitude(Edge *e) {
+	double dx = e->vert->x - e->pair->vert->x;
+	double dy = e->vert->y - e->pair->vert->y;
+	double dz = e->vert->z - e->pair->vert->z;
+	return sqrt(dx * dx + dy * dy + dz * dz);
+}
+
 double minAngle(Face *f1) {
 	Edge *e1 = f1->edge;
 	Edge *e2 = e1->next;
@@ -186,7 +193,6 @@ void localDelaunay(Vertex *v) {
 		double angle1 = MIN(minAngle(edges[i]->face), minAngle(edges[i]->pair->face));
 		edgeFlip(edges[i]);
 		double angle2 = MIN(minAngle(edges[i]->face), minAngle(edges[i]->pair->face));
-		//printf("angle: %f %f\n", angle1, angle2);
 		if(angle1 > angle2) edgeFlip(edges[i]);
 	}
 	free(edges);
@@ -253,7 +259,7 @@ float melaxCost(Edge *e) {
 	dy = e->vert->y - e->pair->vert->y;
 	dz = e->vert->z - e->pair->vert->z;
 	
-	return curvature * sqrt(dx * dx + dy * dy + dz * dz);
+	return /*curvature * */ sqrt(dx * dx + dy * dy + dz * dz);
 }
 
 
@@ -306,6 +312,7 @@ int collapsable(Edge *e) {
 void reduce(Mesh *m) {
 	Edge *e;
 	Vertex *v;
+	
 	e = removeMin(m->heap);
 	if(e == NULL) return;
 	
@@ -313,6 +320,10 @@ void reduce(Mesh *m) {
 	//localDelaunay(v);
 	recalculate(m, v);
 	recalculate(m, v);
+	
+	if(!verifyHeap(m->heap)) {
+		printf("Heap consistency error!\n");
+	}
 }
 
 Vertex *collapseEdge(Mesh *m, Edge *e) {

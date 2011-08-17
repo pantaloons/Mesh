@@ -85,34 +85,35 @@ Edge *removeMin(Heap *h) {
 
 void removeEdge(Heap *h, Edge *e) {
 	if(h->size == 0 || e->heapNode == NULL) return;
-	
+	float oldCost = e->heapNode->cost;
 	h->heap[e->heapNode->index] = h->heap[h->size - 1];
 	h->heap[e->heapNode->index]->index = e->heapNode->index;
-	h->size--;
-	siftdown(h, e->heapNode->index);
+	h->size -= 1;
+	float newCost = h->heap[e->heapNode->index]->cost;
+	if(newCost > oldCost) {
+		siftdown(h, e->heapNode->index);
+	}
+	else if(newCost < oldCost) {
+		siftup(h, e->heapNode->index);
+	}
 	e->heapNode = NULL;
 }
 
 void siftdown(Heap *h, int index) {
-	EdgeNode *current = h->heap[index];
-	int swapLeft, swapRight;
+	EdgeNode *temp;
 	while(1) {
-		swapLeft = index * 2 + 1 < h->size && current->cost > h->heap[index * 2 + 1]->cost;
-		if(swapLeft) {
-			h->heap[index] = h->heap[index * 2 + 1];
+		int left = index * 2 + 1;
+		int right = index * 2 + 2;
+		int largest = index;
+		if(left < h->size && h->heap[left]->cost < h->heap[index]->cost) largest = left;
+		if(right < h->size && h->heap[right]->cost < h->heap[largest]->cost) largest = right;
+		if(largest != index) {
+			temp = h->heap[index];
+			h->heap[index] = h->heap[largest];
+			h->heap[largest] = temp;
 			h->heap[index]->index = index;
-			h->heap[index * 2 + 1] = current;
-			index = index * 2 + 1;
-			h->heap[index]->index = index;
-			continue;
-		}
-		swapRight = index * 2 + 2 < h->size && current->cost > h->heap[index * 2 + 2]->cost;
-		if(swapRight) {
-			h->heap[index] = h->heap[index * 2 + 2];
-			h->heap[index]->index = index;
-			h->heap[index * 2 + 2] = current;
-			index = index * 2 + 2;
-			h->heap[index]->index = index;
+			h->heap[largest]->index = largest;
+			index = largest;
 			continue;
 		}
 		break;
@@ -120,12 +121,26 @@ void siftdown(Heap *h, int index) {
 }
 
 void siftup(Heap *h, int index) {
-	EdgeNode *current = h->heap[index], *temp;
-	while(current->index > 0 && h->heap[(current->index - 1)/2]->cost > current->cost) {
-		temp = h->heap[(current->index - 1)/2];
-		temp->index = current->index;
-		h->heap[(current->index - 1)/2] = current;
-		h->heap[current->index] = temp;
-		current->index = (current->index - 1)/2;
+	EdgeNode *temp;
+	while(index > 0 && h->heap[(index - 1)/2]->cost > h->heap[index]->cost) {
+		temp = h->heap[index];
+		h->heap[index] = h->heap[(index - 1)/2];
+		h->heap[(index - 1)/2] = temp;
+		h->heap[index]->index = index;
+		h->heap[(index - 1)/2]->index = (index - 1)/2;
+		index = (index - 1)/2;
 	}
+}
+
+int check(Heap *h, int index) {
+	if(index >= h->size) return 1;
+	if(h->heap[(index - 1)/2]->cost > h->heap[index]->cost) return 0;
+	if(h->heap[index]->edge->heapNode != h->heap[index]) return 0;
+	return check(h, 2 * index + 1) && check(h, 2 * index + 2);
+}
+
+int verifyHeap(Heap *h) {
+	if(h->heap[0]->edge->heapNode != h->heap[0]) return 0;
+	if(h->size == 0) return 1;
+	return check(h, 1) && check(h, 2);
 }
