@@ -21,7 +21,7 @@ typedef struct _hashmap {
 	struct _mapnode **map;
 } HashMap;
 
-Mesh *readMesh(char *fileName);
+Mesh *readMesh(char *fileName, float dimensions[6]);
 void printMesh(Mesh *m, FILE *f);
 
 #endif

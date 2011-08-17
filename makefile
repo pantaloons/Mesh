@@ -1,13 +1,13 @@
-CC = gcc
-CFLAGS = -g -Wall -Wextra -std=c99 -pedantic
+CC = clang
+CFLAGS = -Wall -Wextra -std=c99 -pedantic -O3
 LDFLAGS = -lm -lglut -lGLU -lGL
 
-all: raptor
+all: display
 
-raptor: raptor.o mesh.o meshio.o heap.o
+display: display.o mesh.o meshio.o heap.o
 	$(CC) $(LDFLAGS) -o $@ $^
 	
-raptor.o: raptor.c
+display.o: display.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 	
 heap.o: heap.c

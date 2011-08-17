@@ -76,7 +76,7 @@ Edge* mapGet(HashMap* map, EdgeID key) {
 * into a Mesh object. The Mesh object is a winged edge
 * data structure and should be completely filled.
 */
-Mesh* readMesh(char* fileName) {
+Mesh* readMesh(char* fileName, float dimensions[6]) {
 	FILE *f;
 	char header[3];
 	int numVertices, numFaces, numEdges;
@@ -93,7 +93,19 @@ Mesh* readMesh(char* fileName) {
 	int i, foundPairs;
 	double progress = -1.0f, curProgress = 0.0f;
 	
-	f = fopen(fileName, "r");
+	dimensions[0] = 1e20;
+	dimensions[1] = -1e20;
+	dimensions[2] = 1e20;
+	dimensions[3] = -1e20;
+	dimensions[4] = 1e20;
+	dimensions[5] = -1e20;
+	
+	char* newName = malloc((9 + strlen(fileName)) * sizeof(char));
+	newName[0] = 0;
+	strcat(newName, "objects/");
+	strcat(newName, fileName);
+	f = fopen(newName, "r");
+	
 	if(f == NULL) {
 		printf("Could not open file %s for reading, does it exist?\n", fileName);
 		exit(1);
@@ -120,6 +132,12 @@ Mesh* readMesh(char* fileName) {
 		verts[i] = (Vertex*)malloc(sizeof(Vertex));
 		verts[i]->index = i;
 		fscanf(f, "%f %f %f", &(verts[i]->x), &(verts[i]->y), &(verts[i]->z));
+		dimensions[0] = MIN(dimensions[0], verts[i]->x);
+		dimensions[1] = MAX(dimensions[1], verts[i]->x);
+		dimensions[2] = MIN(dimensions[2], verts[i]->y);
+		dimensions[3] = MAX(dimensions[3], verts[i]->y);
+		dimensions[4] = MIN(dimensions[4], verts[i]->z);
+		dimensions[5] = MAX(dimensions[5], verts[i]->z);
 	}
 	printf("100%% complete.\n");
 	
@@ -229,7 +247,7 @@ Mesh* readMesh(char* fileName) {
 	}
 	printf("100%% complete.\n");
 	if(foundPairs != numFaces * 3) {
-		printf("Mesh in file %s is non-manifold.\n", fileName);
+		printf("Mesh in file %s is non-manifold. Found %d edge pairs but have %d faces.\n", fileName, foundPairs, numFaces * 3);
 		exit(6);
 	}
 	

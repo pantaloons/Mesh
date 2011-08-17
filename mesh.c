@@ -11,7 +11,7 @@ Mesh *initMesh(int numVertices, int numFaces, int numEdges, Vertex** verts, Face
 	m->verts = verts;
 	m->faces = faces;
 	m->edges = edges;
-	m->heap = initHeap(m, melaxCost, collapsable);
+	m->heap = initHeap(m, simpleCost, collapsable);
 	return m;
 }
 
@@ -259,7 +259,7 @@ float melaxCost(Edge *e) {
 	dy = e->vert->y - e->pair->vert->y;
 	dz = e->vert->z - e->pair->vert->z;
 	
-	return /*curvature * */ sqrt(dx * dx + dy * dy + dz * dz);
+	return curvature * sqrt(dx * dx + dy * dy + dz * dz);
 }
 
 
@@ -319,11 +319,13 @@ void reduce(Mesh *m) {
 	v = collapseEdge(m, e);
 	//localDelaunay(v);
 	recalculate(m, v);
-	recalculate(m, v);
+	//recalculate(m, v);
 	
+#ifdef DEBUG
 	if(!verifyHeap(m->heap)) {
 		printf("Heap consistency error!\n");
 	}
+#endif
 }
 
 Vertex *collapseEdge(Mesh *m, Edge *e) {

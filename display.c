@@ -17,25 +17,29 @@
 #include "meshio.h"
 
 #define __UNUSED(x) (void)x;
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
 
 #define WINDOW_START_WIDTH 640
 #define WINDOW_START_HEIGHT 480
 #define SCENE_SPEED 1.0f
 #define CLOCK_RATE 1000
-#define MODEL_FILE "objects/eight.off"
+#define MODEL_FILE "camel.off"
 
+char* fileName;
 int width = WINDOW_START_WIDTH;
 int height = WINDOW_START_HEIGHT;
 
 unsigned long lastTick;
 int lines;
 
+float dimensions[6];
 Mesh *mesh;
 Heap *heap;
 
 GLfloat lightMat[] = {1.0, 0.0, 0.0, 1.0}; 
 GLfloat lightPos[] = {1.0, 1.0, 1.0, 0.0};  /* Infinite light location. */
 
+int xrot = 0;
 int yrot = 0;
 
 unsigned long getTime() {
@@ -80,9 +84,8 @@ void render(void) {
 	Edge *edge;
 	float normal[3];
 	glPushMatrix();
-	glRotatef(yrot, 0.0f, 1.0f, 0.0f);  
-	glScalef(80, 80, 80);
-	//1glScalef(10, 10, 10);
+	glRotatef(xrot, 0.0f, 1.0f, 0.0f);  
+	glRotatef(yrot, 1.0f, 0.0f, 0.0f);
 	glBegin(GL_TRIANGLES);
 	for(i = 0; i < mesh->numFaces; i++) {
 		faceNormal(mesh->faces[i], normal);
@@ -104,12 +107,15 @@ void draw(float timeDelta) {
 	
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(70.0f, width / (float)height, 1.0f, 1000.0f);
+	gluPerspective(70.0f, width / (float)height, 0.01f, 10000.0f);
 	
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	
-	gluLookAt(-50, 40, -30, -25, 10, 0, 0, 1, 0);
+	float dist = MAX(MAX(dimensions[1] - dimensions[0], dimensions[3] - dimensions[2]), dimensions[5] - dimensions[4]);
+	gluLookAt((dimensions[0] + dimensions[1])/2.0f, (dimensions[2] + dimensions[3])/2.0f, dimensions[5] + 1.0f * dist,
+			   (dimensions[0] + dimensions[1])/2.0f, (dimensions[2] + dimensions[3])/2.0f, (dimensions[4] + dimensions[5])/2.0f,
+			   0, 1, 0);
 	
 	if(lines) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -126,28 +132,41 @@ void tick(void) {
 	draw(delta);
 	
 	lastTick = curTick;
+	printf("%p ", fileName);
 }
 
 void deallocate(void) {
 	destroyMesh(mesh);
 }
 
+void reset() {
+	printf("%p ", fileName);
+	printf("%s\n", fileName);
+	readMesh(fileName, dimensions);
+}
+
 void keyboardInput(unsigned char key, int x, int y) {
 	__UNUSED(x);
 	__UNUSED(y);
-	int i;
 	switch(key) {
 		case '1': {
-			for(i = 0; i < 50; i++)
-			reduce(mesh);
+			while(mesh->numEdges > 500) {
+				reduce(mesh);
+			}
 			//printMesh(mesh, stdout);
 			break;
 		}
-		case 'l':
+		case 'v':
 			lines = 1 - lines;
 			break;
 		case 'p':
 			printMesh(mesh, stdout);
+			break;
+		case 'q':
+			exit(0);
+			break;
+		case 'r':
+			reset();
 			break;
 		default: break;
 
@@ -160,10 +179,16 @@ void specialInput(int k, int x, int y) {
 	__UNUSED(y);
 	switch(k) {
 		case GLUT_KEY_LEFT:
-			yrot = (yrot + 5) % 360;
+			xrot = (xrot + 5) % 360;
 			break;
 		case GLUT_KEY_RIGHT:
-			yrot = (yrot - 5) % 360;
+			xrot = (xrot - 5) % 360;
+			break;
+		case GLUT_KEY_UP:
+			yrot = (yrot - 5);
+			break;
+		case GLUT_KEY_DOWN:
+			yrot = (yrot + 5);
 			break;
 		default: break;
 	}
@@ -171,7 +196,21 @@ void specialInput(int k, int x, int y) {
 }
 
 int main(int argc, char** argv) {
-	mesh = readMesh(MODEL_FILE);
+	char* fileName;
+	if(argc <= 1) {
+		fileName = malloc((strlen(MODEL_FILE) + 1) * sizeof(char));
+		fileName[0] = 0;
+		strcat(fileName, MODEL_FILE);
+	}
+	else {
+		fileName = malloc((strlen(argv[1]) + 1) * sizeof(char));
+		fileName[0] = 0;
+		strcat(fileName, argv[1]);
+	}
+	
+	mesh = readMesh(fileName, dimensions);
+	
+	printf("%p %s\n", fileName, fileName);
 	
 	atexit(deallocate);
 	glutInit(&argc, argv);
