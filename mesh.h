@@ -24,7 +24,7 @@ float melaxCost(Edge *e);
 float garlandCost(Edge *e);
 
 int collapsable(Edge *e);
-void reduce(Mesh *m);
+int reduce(Mesh *m);
 Vertex *collapseEdge(Mesh *m, Edge *e);
 
 #endif

@@ -1,5 +1,5 @@
-CC = clang
-CFLAGS = -Wall -Wextra -std=c99 -pedantic -O3
+CC = gcc
+CFLAGS = -Wall -g -Wextra -std=c99 -pedantic
 LDFLAGS = -lm -lglut -lGLU -lGL
 
 all: display
@@ -14,7 +14,7 @@ heap.o: heap.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 	
 meshio.o: meshio.c
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CFLAGS) -Wno-unused-result -c -o $@ $<
 
 mesh.o: mesh.c
 	$(CC) $(CFLAGS) -c -o $@ $<

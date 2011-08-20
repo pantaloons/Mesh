@@ -3,6 +3,8 @@
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
+float (*currentCost)(Edge*) = simpleCost;
+
 Mesh *initMesh(int numVertices, int numFaces, int numEdges, Vertex** verts, Face** faces, Edge** edges) {
 	Mesh *m = (Mesh*)malloc(sizeof(Mesh));
 	m->numVertices = numVertices;
@@ -11,8 +13,16 @@ Mesh *initMesh(int numVertices, int numFaces, int numEdges, Vertex** verts, Face
 	m->verts = verts;
 	m->faces = faces;
 	m->edges = edges;
-	m->heap = initHeap(m, simpleCost, collapsable);
+	m->heap = initHeap(m, currentCost, collapsable);
 	return m;
+}
+
+void changeCostFunc(Mesh *m, float (*func)(Edge*)) {
+	m->heap->func = func;
+	currentCost = func;
+	for(int i = 0; i < m->numEdges; i++) {
+		recalculateKey(m->heap, m->edges[i]);
+	}
 }
 
 void destroyMesh(Mesh* m) {
@@ -105,35 +115,37 @@ void edgeFlip(Edge *e) {
 	Edge *epp = e->pair->prev;
 	Edge *epn = e->pair->next;
 	
-	e->vert->edge = e->next->pair;
-	e->pair->vert->edge = e->pair->next->pair;
+	/* Change vert -> edge pointers */
+	e->vert->edge = epp;
+	e->pair->vert->edge = ep;
 	
-	e->next->prev = e->pair->prev;
-	e->next->next = e;
-	e->prev->next = e->pair->next;
-	e->prev->prev = e->pair;
+	/* Change edge -> edge pointers */
+	en->prev = epp;
+	en->next = e;
+	ep->next  = epn;
+	ep->prev = e->pair;
 	
-	e->pair->next->prev = e->prev;
-	e->pair->next->next = e->pair;
-	e->pair->prev->next = e->next;
-	e->pair->prev->prev = e;
+	epn->prev = ep;
+	epn->next = e->pair;
+	epp->next = en;
+	epp->prev = e;
 	
 	e->prev = en;
 	e->next = epp;
-	
 	e->pair->prev = epn;
 	e->pair->next = ep;
-	
+
+	/* Change edge -> vert pointers */
 	e->vert = epn->vert;
 	e->pair->vert = en->vert;
 	
-	e->face->edge = e;
-	e->next->face = e->face;
-	e->prev->face = e->face;
+	/* Change edge -> face pointers */
+	epp->face = e->face;
+	ep->face = e->pair->face;
 	
+	/* Change face -> edge pointers */
+	e->face->edge = e;
 	e->pair->face->edge = e->pair;
-	e->pair->next->face = e->pair->face;
-	e->pair->prev->face = e->pair->face;
 }
 
 double magnitude(Edge *e) {
@@ -143,59 +155,59 @@ double magnitude(Edge *e) {
 	return sqrt(dx * dx + dy * dy + dz * dz);
 }
 
-double minAngle(Face *f1) {
-	Edge *e1 = f1->edge;
+double minAngle(Edge *e1) {
 	Edge *e2 = e1->next;
 	Edge *e3 = e2->next;
 	
 	double len1 = sqrt((e1->vert->x - e3->vert->x) * (e1->vert->x - e3->vert->x) +
 				  (e1->vert->y - e3->vert->y) * (e1->vert->y - e3->vert->y) +
 				  (e1->vert->z - e3->vert->z) * (e1->vert->z - e3->vert->z));
-	double len2 = sqrt((e1->vert->x - e3->vert->x) * (e1->vert->x - e3->vert->x) +
-				  (e1->vert->y - e3->vert->y) * (e1->vert->y - e3->vert->y) +
-				  (e1->vert->z - e3->vert->z) * (e1->vert->z - e3->vert->z));
+	double len2 = sqrt((e2->vert->x - e3->vert->x) * (e2->vert->x - e3->vert->x) +
+				  (e2->vert->y - e3->vert->y) * (e2->vert->y - e3->vert->y) +
+				  (e2->vert->z - e3->vert->z) * (e2->vert->z - e3->vert->z));
 	double len3 = sqrt((e2->vert->x - e1->vert->x) * (e2->vert->x - e1->vert->x) +
 				  (e2->vert->y - e1->vert->y) * (e2->vert->y - e1->vert->y) +
 				  (e2->vert->z - e1->vert->z) * (e2->vert->z - e1->vert->z));
 				  
 	double t1 = acos(((e1->vert->x - e3->vert->x) * (e2->vert->x - e3->vert->x) +
-				(e1->vert->y - e3->vert->y) * (e2->vert->x - e3->vert->y) +
-				(e1->vert->z - e3->vert->z) * (e2->vert->x - e3->vert->z))/(len1 * len2));
+				(e1->vert->y - e3->vert->y) * (e2->vert->y - e3->vert->y) +
+				(e1->vert->z - e3->vert->z) * (e2->vert->z - e3->vert->z))/(len1 * len2));
 	
 	double t2 = acos(((e3->vert->x - e1->vert->x) * (e2->vert->x - e1->vert->x) +
-				(e3->vert->y - e1->vert->y) * (e2->vert->x - e1->vert->y) +
-				(e3->vert->z - e1->vert->z) * (e2->vert->x - e1->vert->z))/(len2 * len3));
+				(e3->vert->y - e1->vert->y) * (e2->vert->y - e1->vert->y) +
+				(e3->vert->z - e1->vert->z) * (e2->vert->z - e1->vert->z))/(len1 * len3));
 				
 	double t3 = acos(((e3->vert->x - e2->vert->x) * (e1->vert->x - e2->vert->x) +
 				(e3->vert->y - e2->vert->y) * (e1->vert->y - e2->vert->y) +
-				(e3->vert->z - e2->vert->z) * (e1->vert->z - e2->vert->z))/(len3 * len1));
+				(e3->vert->z - e2->vert->z) * (e1->vert->z - e2->vert->z))/(len2 * len3));
 				
 	return MIN(t1, MIN(t2, t3));
 }
 
 /**
-* Perform edge flipping to obtain a locally delaunay triangulation around e
+* Perform edge flipping to obtain a locally delaunay triangulation around.
 */
 void localDelaunay(Vertex *v) {
-	int cap = 10, i, num = 0;
-	Edge** edges = (Edge**)malloc(cap * sizeof(Edge*));
-	Edge *e = v->edge;
-	do {
-		edges[num++] = e;
-		if(num >= cap) {
-			cap *= 2;
-			edges = (Edge**)realloc(edges, cap * sizeof(Edge*));
-		}
-		e = e->pair->prev;
-	} while(e != v->edge);
-	
-	for(i = 0; i < num - 1; i += 2) {
-		double angle1 = MIN(minAngle(edges[i]->face), minAngle(edges[i]->pair->face));
-		edgeFlip(edges[i]);
-		double angle2 = MIN(minAngle(edges[i]->face), minAngle(edges[i]->pair->face));
-		if(angle1 > angle2) edgeFlip(edges[i]);
+	Edge *e;
+	int found = 0;
+	while(1) {
+		found = 0;
+		e = v->edge;
+		do {
+			double angle1 = MIN(minAngle(e), minAngle(e->pair));
+			edgeFlip(e);
+			double angle2 = MIN(minAngle(e), minAngle(e->pair));
+			if(angle1 >= angle2 || abs(angle1 - angle2) < 1e-4) {
+				edgeFlip(e);
+			}
+			else {
+				found = 1;
+				break;
+			}
+			e = e->pair->prev;
+		} while(e != v->edge);
+		if(!found) break;
 	}
-	free(edges);
 }
 
 /**
@@ -309,15 +321,15 @@ int collapsable(Edge *e) {
 	return 1;
 }
 
-void reduce(Mesh *m) {
+int reduce(Mesh *m) {
 	Edge *e;
 	Vertex *v;
 	
 	e = removeMin(m->heap);
-	if(e == NULL) return;
+	if(e == NULL) return 0;
 	
 	v = collapseEdge(m, e);
-	//localDelaunay(v);
+	localDelaunay(v);
 	recalculate(m, v);
 	//recalculate(m, v);
 	
@@ -326,6 +338,7 @@ void reduce(Mesh *m) {
 		printf("Heap consistency error!\n");
 	}
 #endif
+	return 1;
 }
 
 Vertex *collapseEdge(Mesh *m, Edge *e) {
@@ -369,7 +382,6 @@ Vertex *collapseEdge(Mesh *m, Edge *e) {
 	/* Re link edge referred to by P */
 	p = e->pair->vert;
 	if(p->edge == e->pair) p->edge = a;
-	
 	
 	p->x = (p->x + e->vert->x)/2.0f;
 	p->y = (p->y + e->vert->y)/2.0f;

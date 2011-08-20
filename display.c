@@ -41,6 +41,7 @@ GLfloat lightPos[] = {1.0, 1.0, 1.0, 0.0};  /* Infinite light location. */
 
 int xrot = 0;
 int yrot = 0;
+int zoom = 0;
 
 unsigned long getTime() {
 #ifdef _WIN32
@@ -84,8 +85,9 @@ void render(void) {
 	Edge *edge;
 	float normal[3];
 	glPushMatrix();
-	glRotatef(xrot, 0.0f, 1.0f, 0.0f);  
 	glRotatef(yrot, 1.0f, 0.0f, 0.0f);
+	glRotatef(xrot, 0.0f, 1.0f, 0.0f);  
+	
 	glBegin(GL_TRIANGLES);
 	for(i = 0; i < mesh->numFaces; i++) {
 		faceNormal(mesh->faces[i], normal);
@@ -113,6 +115,7 @@ void draw(float timeDelta) {
 	glLoadIdentity();
 	
 	float dist = MAX(MAX(dimensions[1] - dimensions[0], dimensions[3] - dimensions[2]), dimensions[5] - dimensions[4]);
+	glTranslatef(0, 0, zoom * dist/5.0f);
 	gluLookAt((dimensions[0] + dimensions[1])/2.0f, (dimensions[2] + dimensions[3])/2.0f, dimensions[5] + 1.0f * dist,
 			   (dimensions[0] + dimensions[1])/2.0f, (dimensions[2] + dimensions[3])/2.0f, (dimensions[4] + dimensions[5])/2.0f,
 			   0, 1, 0);
@@ -132,7 +135,6 @@ void tick(void) {
 	draw(delta);
 	
 	lastTick = curTick;
-	printf("%p ", fileName);
 }
 
 void deallocate(void) {
@@ -140,22 +142,31 @@ void deallocate(void) {
 }
 
 void reset() {
-	printf("%p ", fileName);
-	printf("%s\n", fileName);
-	readMesh(fileName, dimensions);
+	mesh = readMesh(fileName, dimensions);
 }
 
 void keyboardInput(unsigned char key, int x, int y) {
 	__UNUSED(x);
 	__UNUSED(y);
 	switch(key) {
-		case '1': {
-			while(mesh->numEdges > 500) {
-				reduce(mesh);
+		case '1':
+		case '2':
+		case '3':
+		case '4':
+		case '5':
+		case '6':
+		case '7':
+		case '8':
+		case '9': {
+			int targetEdges = MAX(6, (1.0f - 0.1f * (int)(key - '0')) * mesh->numEdges);
+			while(mesh->numEdges > targetEdges) {
+				if(!reduce(mesh)) break;
 			}
-			//printMesh(mesh, stdout);
 			break;
 		}
+		case '`':
+			reduce(mesh);
+			break;
 		case 'v':
 			lines = 1 - lines;
 			break;
@@ -167,6 +178,18 @@ void keyboardInput(unsigned char key, int x, int y) {
 			break;
 		case 'r':
 			reset();
+			break;
+		case 'm':
+			changeCostFunc(mesh, melaxCost);
+			break;
+		case 's':
+			changeCostFunc(mesh, simpleCost);
+			break;
+		case '+':
+			zoom += 1;
+			break;
+		case '-':
+			zoom -= 1;
 			break;
 		default: break;
 
@@ -196,7 +219,6 @@ void specialInput(int k, int x, int y) {
 }
 
 int main(int argc, char** argv) {
-	char* fileName;
 	if(argc <= 1) {
 		fileName = malloc((strlen(MODEL_FILE) + 1) * sizeof(char));
 		fileName[0] = 0;
@@ -209,8 +231,6 @@ int main(int argc, char** argv) {
 	}
 	
 	mesh = readMesh(fileName, dimensions);
-	
-	printf("%p %s\n", fileName, fileName);
 	
 	atexit(deallocate);
 	glutInit(&argc, argv);
