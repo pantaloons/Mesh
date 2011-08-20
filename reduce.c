@@ -6,12 +6,7 @@
 
 #include <GL/gl.h>
 #include <GL/glu.h>
-
-#ifdef _WIN32
-#include "lib/glut.h"
-#else
 #include <GL/glut.h>
-#endif
 
 #include "heap.h"
 #include "meshio.h"
@@ -158,17 +153,23 @@ void keyboardInput(unsigned char key, int x, int y) {
 		case '7':
 		case '8':
 		case '9': {
+			int initEdges = mesh->numEdges;
 			int targetEdges = MAX(6, (1.0f - 0.1f * (int)(key - '0')) * mesh->numEdges);
 			while(mesh->numEdges > targetEdges) {
 				if(!reduce(mesh)) break;
 			}
+			printf("Mesh successfully reduced by: %c0%%. From %d to %d edges.\n", key, initEdges, mesh->numEdges);
 			break;
 		}
 		case '`':
 			reduce(mesh);
+			printf("Mesh successfully reduced by one vertex.\n");
 			break;
 		case 'v':
 			lines = 1 - lines;
+			printf("Display mode changed. ");
+			if(lines) printf("Drawing with GL_LINES.\n");
+			else printf("Drawing with GL_TRIANGLES.\n");
 			break;
 		case 'p':
 			printMesh(mesh, stdout);
@@ -178,12 +179,15 @@ void keyboardInput(unsigned char key, int x, int y) {
 			break;
 		case 'r':
 			reset();
+			printf("Mesh successfully reset.\n");
 			break;
 		case 'm':
 			changeCostFunc(mesh, melaxCost);
+			printf("Cost function changed to Melax.\n");
 			break;
 		case 's':
 			changeCostFunc(mesh, simpleCost);
+			printf("Cost function changed to Simple.\n");
 			break;
 		case '+':
 			zoom += 1;

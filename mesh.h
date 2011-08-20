@@ -19,6 +19,7 @@ void edgeFlip(Edge *e);
 void localDelaunay(Vertex *e);
 void recalculate(Mesh *m, Vertex *v);
 
+void changeCostFunc(Mesh *m, float (*func)(Edge*));
 float simpleCost(Edge *e);
 float melaxCost(Edge *e);
 float garlandCost(Edge *e);

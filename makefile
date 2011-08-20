@@ -1,13 +1,13 @@
 CC = gcc
-CFLAGS = -Wall -g -Wextra -std=c99 -pedantic
-LDFLAGS = -lm -lglut -lGLU -lGL
+CFLAGS = -Wall -g -Wextra -std=c99 -pedantic -O4
+LDFLAGS =  -lm -lglut -lGLU -lGL
 
-all: display
+all: reduce
 
-display: display.o mesh.o meshio.o heap.o
+reduce: reduce.o mesh.o meshio.o heap.o
 	$(CC) $(LDFLAGS) -o $@ $^
 	
-display.o: display.c
+reduce.o: reduce.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 	
 heap.o: heap.c
@@ -20,6 +20,6 @@ mesh.o: mesh.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 	
 clean:
-	rm -f raptor raptor.o meshio.o mesh.o heap.o core.* vgcore.*
+	rm -f reduce *.o vgcore.*
 	
 .PHONY: clean

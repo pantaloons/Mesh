@@ -298,11 +298,19 @@ int collapsable(Edge *e) {
 	/* Case (b), incident vertices are boundary vertices but edge is not a boundary edge
 		This shouldn't happen for manifolds */
 	//if(e->pair != NULL && boundaryVertex(e->vert) && boundaryVertex(e->pair->vert)) return 0;
+
+	a = e->next->vert;
+	b = e->pair->next->vert;
+
+	/* Consistency check for strange degenerate cases (likely mesh folding / collapse) */
+	if(a == b || e == e->pair || e->next == e->prev || e == e->next || e == e->prev ||
+		e->pair == e->pair->prev || e->pair == e->pair->next || e->pair->next == e->pair->prev ||
+		e == e->pair->next || e == e->pair->prev || e->next == e->pair || e->next == e->pair->next ||
+		e->next == e->pair->prev || e->prev == e->pair || e->prev == e->pair->next ||
+		e->prev == e->pair->prev || e->face == e->pair->face || e->vert == e->pair->vert) return 0;
 	
 	/* Case (c), the intersection of the one ring neighbourhoods of the incident vertices
 	   contains more than just the two incident vertices */	
-	a = e->next->vert;
-	b = e->pair->next->vert;
 	ring1 = e;
 	do {
 		ring2 = e->pair;
