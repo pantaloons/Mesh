@@ -185,7 +185,7 @@ double minAngle(Edge *e1) {
 }
 
 /**
-* Perform edge flipping to obtain a locally delaunay triangulation around.
+* Perform edge flipping to obtain a locally delaunay triangulation around a vertex.
 */
 void localDelaunay(Vertex *v) {
 	Edge *e;
@@ -239,7 +239,10 @@ float simpleCost(Edge *e) {
 	dy = e->vert->y - e->pair->vert->y;
 	dz = e->vert->z - e->pair->vert->z;
 	return sqrt(dx * dx + dy * dy + dz * dz);
-	return acos(normal1[0] * normal2[0] + normal1[1] * normal2[1] + normal1[2] * normal2[2]) + sqrt(dx * dx + dy * dy + dz * dz);
+	/* These are absolute rubbish, how can we combine the angle and distance in any meaningful way, why should the reduction strategy change
+	 * if the model gets scaled? */
+	/* return acos(normal1[0] * normal2[0] + normal1[1] * normal2[1] + normal1[2] * normal2[2]) + sqrt(dx * dx + dy * dy + dz * dz); */
+	/* return (1.0f - (normal1[0] * normal2[0] + normal1[1] * normal2[1] + normal1[2] * normal2[2]))/2.0f + sqrt(dx * dx + dy * dy + dz * dz); */
 }
 
 /**
@@ -339,7 +342,6 @@ int reduce(Mesh *m) {
 	v = collapseEdge(m, e);
 	localDelaunay(v);
 	recalculate(m, v);
-	//recalculate(m, v);
 	
 #ifdef DEBUG
 	if(!verifyHeap(m->heap)) {

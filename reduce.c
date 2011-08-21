@@ -80,8 +80,10 @@ void render(void) {
 	Edge *edge;
 	float normal[3];
 	glPushMatrix();
+	glTranslatef((dimensions[0] + dimensions[1])/2.0f, (dimensions[2] + dimensions[3])/2.0f, (dimensions[4] + dimensions[5])/2.0f);
 	glRotatef(yrot, 1.0f, 0.0f, 0.0f);
-	glRotatef(xrot, 0.0f, 1.0f, 0.0f);  
+	glRotatef(xrot, 0.0f, 1.0f, 0.0f);
+	glTranslatef(-(dimensions[0] + dimensions[1])/2.0f, -(dimensions[2] + dimensions[3])/2.0f, -(dimensions[4] + dimensions[5])/2.0f);
 	
 	glBegin(GL_TRIANGLES);
 	for(i = 0; i < mesh->numFaces; i++) {
@@ -154,11 +156,13 @@ void keyboardInput(unsigned char key, int x, int y) {
 		case '8':
 		case '9': {
 			int initEdges = mesh->numEdges;
+			int initPolys = mesh->numFaces;
 			int targetEdges = MAX(6, (1.0f - 0.1f * (int)(key - '0')) * mesh->numEdges);
 			while(mesh->numEdges > targetEdges) {
 				if(!reduce(mesh)) break;
 			}
-			printf("Mesh successfully reduced by: %c0%%. From %d to %d edges.\n", key, initEdges, mesh->numEdges);
+			printf("Mesh successfully reduced by %c0%%. From %d to %d edges, %d to %d polys.\n",
+				key, initEdges, mesh->numEdges, initPolys, mesh->numFaces);
 			break;
 		}
 		case '`':
@@ -235,6 +239,7 @@ int main(int argc, char** argv) {
 	}
 	
 	mesh = readMesh(fileName, dimensions);
+	//keyboardInput('9', 0, 0);
 	
 	atexit(deallocate);
 	glutInit(&argc, argv);
