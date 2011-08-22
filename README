@@ -1,1 +1,8 @@
-Simple mesh simplification program using edge collapse
+Simple mesh simplification program using edge collapse.
+
+To compile and run:
+
+$ make
+$ ./reduce camel.off
+
+Change raptor.off with any off file placed in the objects folder to use different models.
