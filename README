@@ -1,4 +1,4 @@
-Simple mesh simplification program using edge collapse.
+Program to simplify 3D meshes using the edge collapse operation.
 
 To compile and run:
 
